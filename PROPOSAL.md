@@ -1,4 +1,4 @@
-#Proposal
+# Proposal
 ## The Ebb and Flow of US States
 ### Basic Info
 * Michael Mackliet [m.mackliet@gmail.com](mailto:m.mackliet@gmail.com)
