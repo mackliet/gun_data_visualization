@@ -92,6 +92,8 @@ year. This design allows for the user to easily see the net immigration per stat
 using the chord diagram, and get an overview of economic factors related to immigration in the table. This design does 
 not show relationships with economic data very well even though the data is in the table.
 
+![alt text][img/proto1.jpg]
+
 #### Prototype Sketch 2
 
 Prototype 2 has a chord diagram, two directed graphs mapping most immigrated to and from states, and a table with all 
@@ -100,6 +102,8 @@ well as an overview of how the majority of immigration is happening via the dire
 of the data. This does not give a good snapshot of overall immigration like the heat map nor does it show relationships 
 with economic data very well.
 
+![alt text][img/proto2.jpg]
+
 #### Prototype Sketch 3
 
 Prototype 3 has a chord diagram, a heat map, and a scatter plot with a year slider. This model effectively shows 
@@ -107,10 +111,16 @@ movement between regions with the chord diagram, snapshots of overall net immigr
 shows relationships with the economic data over time with the scatter plot. Unfortunately, it does not give raw data 
 for the user to look at without the table.
 
+![alt text][img/proto3.jpg]
+
+#### Final Design
+
 The Final Design has a chord diagram, a heat map, a scatter plot with a year slider, and a table with 
 economic/immigration/population data. This final design, as described in the prototypes, will allow the user to see 
 snapshots of immigration net flow by year, see where people are moving to, and see relationships with the economic data. 
 The table will also allow the user to look at raw data.
+
+![alt text][img/final.jpg]
 
 ### MUST HAVE
 
@@ -121,8 +131,22 @@ show where people are moving to and from and how the movement relates to economi
 
 ### Project Schedule/Deadlines
 * Nov 1  - Data Downloaded and Cleaned into a CSV / Basic HTML layout and JS interface defined.  Basic CSS added. 
-* Nov 8  - *MILESTONE* Data structures defined and ready in JSON format Nov 8.  Object Model Sketches Complete.  Scatter Plot and Table Functioning.
-* Nov 15 - 
-* Nov 27 - 
-* Dec 1  -
-* Dec 3  - Presentation / Final Cleanup
+* Nov 8  - **MILESTONE** Data structures defined and ready in JSON format Nov 8.  Object Model Sketches Complete.  Scatter Plot and Table Functioning.
+* Nov 15 - Chord Diagram functioning, integration with year slider
+* Nov 27 - Heat map displayed, functional, interacts with year slider
+* Dec 1  - Final touchups and layout finishing
+* Dec 3  - Presentation
+
+### Delegate modules/responsibilities
+* Michael
+    * Gather and clean data
+    * Scatter Plot
+    * View interaction
+    * Heat map (Joint task)
+    * Testing
+* Kevin
+    * HTML and JS interfaces
+    * Table
+    * Chord Diagram
+    * Heat map (Joint task)
+    * Testing
