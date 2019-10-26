@@ -1,5 +1,6 @@
 # Proposal
 ## The Ebb and Flow of US States
+
 ### Basic Info
 * Michael Mackliet [m.mackliet@gmail.com](mailto:m.mackliet@gmail.com)
 * Kevin Reilly [reilly.w.kevin@gmail.com](mailto:reilly.w.kevin@gmail.com)
@@ -80,10 +81,44 @@ state when that state is clicked showing immigration patterns with its biggest o
 3. A directed graph with edges to each state showing where residents flow from each other state, with thickness of the edge 
 encoding the amount of migration between the two and color gradient showing the net direction
 4. A line graph showing number of interstate migrants per year
-A plot similar to homework 4 where we get economic indicators to go with population data for each state and make a scatter plot that can be updated over time
-A sortable table with all the population and economic data along with numeric values also being shown as a proportion to the population (number of immigrants vs. percent of population that immigrated).
+5. A plot similar to homework 4 where we get economic indicators to go with population data for each state and make a scatter plot that can be updated over time
+7. A sortable table with all the population and economic data along with numeric values also being shown as a proportion to the population (number of immigrants vs. percent of population that immigrated).
 
+#### Prototype Sketch 1
 
- 
+Prototype 1 has a heat map of net immigration flow, a chord diagram, and a table. The user can sort 
+economic/immigration/population data in the table and there would be a year slider to move the chords and heatmap by 
+year. This design allows for the user to easily see the net immigration per state in the heat map, how people are moving 
+using the chord diagram, and get an overview of economic factors related to immigration in the table. This design does 
+not show relationships with economic data very well even though the data is in the table.
 
+#### Prototype Sketch 2
 
+Prototype 2 has a chord diagram, two directed graphs mapping most immigrated to and from states, and a table with all 
+the economic/immigration/population data. This design shows movement between states/regions in the chord diagram as 
+well as an overview of how the majority of immigration is happening via the directed graphs. The table shows the rest 
+of the data. This does not give a good snapshot of overall immigration like the heat map nor does it show relationships 
+with economic data very well.
+
+#### Prototype Sketch 3
+
+Prototype 3 has a chord diagram, a heat map, and a scatter plot with a year slider. This model effectively shows 
+movement between regions with the chord diagram, snapshots of overall net immigration flows with the heat map, and it 
+shows relationships with the economic data over time with the scatter plot. Unfortunately, it does not give raw data 
+for the user to look at without the table.
+
+The Final Design has a chord diagram, a heat map, a scatter plot with a year slider, and a table with 
+economic/immigration/population data. This final design, as described in the prototypes, will allow the user to see 
+snapshots of immigration net flow by year, see where people are moving to, and see relationships with the economic data. 
+The table will also allow the user to look at raw data.
+
+### MUST HAVE
+
+The chord diagram and scatter plot with a year slider are must-haves. Without them, the graphic would not effectively 
+show where people are moving to and from and how the movement relates to economic factors.
+
+### Optional Features
+
+### Project Schedule/Deadlines
+* Nov 1. - Data Downloaded and Cleaned into a CSV / 
+* 
