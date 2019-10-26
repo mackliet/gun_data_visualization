@@ -1,6 +1,6 @@
 #Proposal
 ## The Ebb and Flow of US States
-#####Basic Info
+###Basic Info
 * Michael Mackliet [m.mackliet@gmail.com](mailto:m.mackliet@gmail.com)
 * Kevin Reilly [reilly.w.kevin@gmail.com](mailto:reilly.w.kevin@gmail.com)
 
