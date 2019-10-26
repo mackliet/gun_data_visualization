@@ -92,7 +92,7 @@ year. This design allows for the user to easily see the net immigration per stat
 using the chord diagram, and get an overview of economic factors related to immigration in the table. This design does 
 not show relationships with economic data very well even though the data is in the table.
 
-![alt text][img/proto1.jpg]
+![Prototype 1](img/proto1.jpg)
 
 #### Prototype Sketch 2
 
@@ -102,7 +102,7 @@ well as an overview of how the majority of immigration is happening via the dire
 of the data. This does not give a good snapshot of overall immigration like the heat map nor does it show relationships 
 with economic data very well.
 
-![alt text][img/proto2.jpg]
+![Prototype 2](img/proto2.jpg)
 
 #### Prototype Sketch 3
 
@@ -111,7 +111,7 @@ movement between regions with the chord diagram, snapshots of overall net immigr
 shows relationships with the economic data over time with the scatter plot. Unfortunately, it does not give raw data 
 for the user to look at without the table.
 
-![alt text][img/proto3.jpg]
+![Prototype 3](img/proto3.jpg)
 
 #### Final Design
 
@@ -120,7 +120,7 @@ economic/immigration/population data. This final design, as described in the pro
 snapshots of immigration net flow by year, see where people are moving to, and see relationships with the economic data. 
 The table will also allow the user to look at raw data.
 
-![alt text][img/final.jpg]
+![Final Design](img/final.jpg)
 
 ### MUST HAVE
 
