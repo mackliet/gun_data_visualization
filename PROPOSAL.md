@@ -120,5 +120,9 @@ show where people are moving to and from and how the movement relates to economi
 ### Optional Features
 
 ### Project Schedule/Deadlines
-* Nov 1. - Data Downloaded and Cleaned into a CSV / 
-* 
+* Nov 1  - Data Downloaded and Cleaned into a CSV / Basic HTML layout and JS interface defined.  Basic CSS added. 
+* Nov 8  - *MILESTONE* Data structures defined and ready in JSON format Nov 8.  Object Model Sketches Complete.  Scatter Plot and Table Functioning.
+* Nov 15 - 
+* Nov 27 - 
+* Dec 1  -
+* Dec 3  - Presentation / Final Cleanup
