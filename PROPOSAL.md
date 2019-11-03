@@ -1,1 +1,0 @@
-The proposal has been moved to the [wiki](https://github.com/mackliet/gun_data_visualization/wiki/Proposal)
