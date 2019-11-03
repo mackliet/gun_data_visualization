@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "module": "es2015",
+    //"esModuleInterop": false,
+    //"resolveJsonModule": false,
+    "target": "es5",
+    //"jsx": "react",
+    "lib": [
+      "dom",
+      "es2016",
+      "es5"
+    ]
+  }
+}

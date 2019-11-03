@@ -1,0 +1,9 @@
+# Node specific
+package-lock.json
+**/node_modules/
+
+#Python specific
+
+
+# IDE
+.idea
