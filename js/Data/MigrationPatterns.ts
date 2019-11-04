@@ -92,13 +92,14 @@ export interface MigrationNode {
 export class MigrationPatterns {
 
     // TODO review this data structure, may not be optimal
+    public readonly years: Array<number> = [];
     public readonly data: Map<number, Map<MigrationNodeId, MigrationNode>>;
 
     constructor(data: Array<Year>){
-        // console.log(data);
         this.data = new Map();
         for (const o of data) {
             const curYear = +o.year;
+            this.years.push(curYear);
             this.data[curYear] = new Map();
             for (const d of o.data){
                 const id = MigrationNodeId[d.state.clean()];
@@ -109,7 +110,7 @@ export class MigrationPatterns {
                     totalCame: d.total_came,
                     totalLeft: d.total_left,
                     edges: new Map<MigrationNodeId, MigrationEdge>()
-                }
+                };
 
                 for (const edge of d.left_to){
                     const toNodeId = MigrationNodeId[edge.state.clean()];
@@ -122,9 +123,6 @@ export class MigrationPatterns {
                 }
                 this.data[curYear][id] = node;
             }
-
-            console.log(this.data[curYear]);
-
         }
     }
 

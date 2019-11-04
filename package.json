@@ -9,7 +9,7 @@
     "url": "https://github.com/mackliet/gun_data_visualization/tree/master/data"
   },
   "scripts": {
-    "test": "LOG_LEVEL=error jest",
+    "test": "LOG_LEVEL=debug jest",
     "clean": "tsc --build --clean",
     "build": "rollup js/script.js --file js/main.js --format iife"
   },
@@ -17,6 +17,7 @@
     "@types/d3": "^5.7.2",
     "@types/jest": "^24.0.21",
     "jest": "^24.9.0",
+    "node-fetch": "^2.6.0",
     "rollup": "1.26.3",
     "ts-jest": "^24.1.0",
     "typescript": "3.5.3"
@@ -26,5 +27,9 @@
     "Immigration",
     "Migration",
     "Data Visualization"
-  ]
+  ],
+  "dependencies": {
+    "d3": "^5.12.0",
+    "jest-junit": "^9.0.0"
+  }
 }
