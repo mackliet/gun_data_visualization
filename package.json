@@ -1,0 +1,29 @@
+{
+  "name": "react-typescript",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "Michael Mackliet and Kevin Reilly",
+  "description": "Interactive Visualization for viewing, consuming US migration patterns",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mackliet/gun_data_visualization/tree/master/data"
+  },
+  "scripts": {
+    "clean": "tsc --build --clean",
+    "build": "rollup js/script.js --file js/main.js --format iife"
+  },
+  "dependencies": {
+    "rollup": "^1.26.3"
+  },
+  "devDependencies": {
+    "@types/d3": "^5.7.2",
+    "typescript": "3.5.3",
+    "rollup": "1.26.3"
+  },
+  "keywords": [
+    "United States",
+    "Immigration",
+    "Migration",
+    "Data Visualization"
+  ]
+}

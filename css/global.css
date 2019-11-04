@@ -1,0 +1,9 @@
+/*TODO Update CSS styles, complete initial design template*/
+.container {
+    margin-left: 10px;
+    margin-right: 10px;
+    height: 1000px;
+    padding-left: 0px;
+    padding-right: 0px;
+    max-width: 1800px;
+}
