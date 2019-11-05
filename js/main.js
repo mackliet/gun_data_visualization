@@ -87,13 +87,12 @@
                     for (var _c = 0, _d = d.left_to; _c < _d.length; _c++) {
                         var edge = _d[_c];
                         var toNodeId = MigrationNodeId[edge.state.clean()];
-                        var migrationEdge = {
+                        node.edges[toNodeId] = {
                             fromMigrationRegion: id,
                             toMigrationRegion: toNodeId,
                             moe: 0,
                             estimate: +edge.estimate
                         };
-                        node.edges[toNodeId] = migrationEdge;
                     }
                     this.data[curYear][id] = node;
                 }

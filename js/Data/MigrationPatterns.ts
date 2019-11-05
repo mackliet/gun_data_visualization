@@ -123,6 +123,8 @@ export class MigrationPatterns {
                 }
                 this.data[curYear][id] = node;
             }
+
+            //console.debug(this.data);
         }
     }
 

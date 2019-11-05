@@ -9,7 +9,7 @@
     "url": "https://github.com/mackliet/gun_data_visualization/tree/master/data"
   },
   "scripts": {
-    "test": "LOG_LEVEL=debug jest",
+    "test": "LOG_LEVEL=error jest",
     "clean": "tsc --build --clean",
     "build": "rollup js/script.js --file js/main.js --format iife"
   },
