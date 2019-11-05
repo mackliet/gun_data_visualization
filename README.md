@@ -13,3 +13,7 @@ To build the main.js for the project simply type
 npm run build
 ```
 
+To run unit tests
+```
+npm run test
+```
