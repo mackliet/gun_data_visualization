@@ -17,3 +17,9 @@ To run unit tests
 ```
 npm run test
 ```
+
+Transpile typescript
+```
+tsc
+tsc -w
+```
