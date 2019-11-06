@@ -1,5 +1,6 @@
 import {Year} from "./ImportData";
 
+// TODO Move this global stuff in some super utility class that is executed before everything else
 declare global {
     interface String {
         clean(): string
@@ -87,16 +88,22 @@ export interface MigrationNode {
 }
 
 /**
+ *
+ */
+export interface MigrationData {
+    [key: number]: Map<MigrationNodeId, MigrationNode>
+}
+
+/**
  * Data structure that contains all the state migration data, immutable
  */
 export class MigrationPatterns {
 
     // TODO review this data structure, may not be optimal
     public readonly years: Array<number> = [];
-    public readonly data: Map<number, Map<MigrationNodeId, MigrationNode>>;
+    public readonly data: MigrationData = {};
 
     constructor(data: Array<Year>){
-        this.data = new Map();
         for (const o of data) {
             const curYear = +o.year;
             this.years.push(curYear);

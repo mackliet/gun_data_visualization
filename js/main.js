@@ -67,11 +67,13 @@
      */
     var MigrationPatterns = /** @class */ (function () {
         function MigrationPatterns(data) {
-            // console.log(data);
-            this.data = new Map();
+            // TODO review this data structure, may not be optimal
+            this.years = [];
+            this.data = {};
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var o = data_1[_i];
                 var curYear = +o.year;
+                this.years.push(curYear);
                 this.data[curYear] = new Map();
                 for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
                     var d = _b[_a];
@@ -96,7 +98,7 @@
                     }
                     this.data[curYear][id] = node;
                 }
-                console.log(this.data[curYear]);
+                //console.debug(this.data);
             }
         }
         return MigrationPatterns;
