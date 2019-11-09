@@ -92,7 +92,7 @@ export interface MigrationNode {
  *
  */
 export interface MigrationData {
-    [key: number]: Map<MigrationNodeId, MigrationNode>
+    [key: number]: MigrationNode[]
 }
 
 /**
@@ -101,15 +101,13 @@ export interface MigrationData {
 export class MigrationPatterns {
 
     // TODO review this data structure, may not be optimal
-    public readonly years: Array<number> = [];
-    public readonly data: Map<number, Map<MigrationNodeId, MigrationNode>>;
+    public readonly data: MigrationData;
 
     constructor(data: Array<Year>){
-        this.data = new Map();
+        this.data = {};
         for (const o of data) {
             const curYear = +o.year;
-            this.years.push(curYear);
-            this.data[curYear] = new Map();
+            this.data[curYear] = [];
             for (const d of o.data){
                 const id = MigrationNodeId[d.state.clean()];
                 const node: MigrationNode = {
@@ -131,16 +129,17 @@ export class MigrationPatterns {
                         estimate: +edge.estimate
                     };
                 }
-                this.data[curYear][id] = node;
+                this.data[curYear].push(node);
             }
 
-            //console.debug(this.data);
         }
+        console.info(this.data);
     }
 
     yearsAsArray() {
+
         Object.keys(this.data).map(key => {
-            console.log(key)
+
         });
     }
 

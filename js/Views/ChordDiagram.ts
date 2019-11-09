@@ -4,6 +4,7 @@ import {MigrationData, MigrationNodeId} from "../Data/MigrationPatterns";
 
 class ChordDiagram implements IView {
 
+    readonly curYear: number;
     readonly currentData: MigrationData;
 
     constructor(data: MigrationData) {

@@ -18,9 +18,11 @@ export class Table implements IView {
     private readonly tBody: Selection<any, any, any, any>;
     private readonly headerLabels = ['Region', 'Inflow', 'Outflow', 'Total'];
 
+    readonly curYear: number;
     readonly currentData: MigrationData;
 
     constructor(data: MigrationData, container: Selection<any, any, any, any>, svgDims: Dimensions) {
+        this.currentData = data;
         // TODO Create the data table objects
         // TODO Need to define columns and css classes for various states and objects
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
@@ -33,17 +35,15 @@ export class Table implements IView {
             this.axisHeader.append('td').text(l).on('click', this.labelListener);
         }
         this.tBody = this.table.append('tbody');
-        this.loadTable();
+        this.loadTable(2017);
     }
 
     /**
      * Class to refresh the data table for sorting, brush, or selections
      */
-    loadTable() {
+    loadTable(year) {
         console.debug('Loading data table');
-        this.tBody.enter().data(this.currentData, (v, k) => {
-            return k
-        })
+        this.tBody.enter().data(this.currentData[year])
     }
 
     labelListener(l) {

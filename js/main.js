@@ -67,14 +67,11 @@
      */
     var MigrationPatterns = /** @class */ (function () {
         function MigrationPatterns(data) {
-            // TODO review this data structure, may not be optimal
-            this.years = [];
-            this.data = new Map();
+            this.data = {};
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var o = data_1[_i];
                 var curYear = +o.year;
-                this.years.push(curYear);
-                this.data[curYear] = new Map();
+                this.data[curYear] = [];
                 for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
                     var d = _b[_a];
                     var id = MigrationNodeId[d.state.clean()];
@@ -97,14 +94,13 @@
                             estimate: +edge.estimate
                         };
                     }
-                    this.data[curYear][id] = node;
+                    this.data[curYear].push(node);
                 }
-                //console.debug(this.data);
             }
+            console.info(this.data);
         }
         MigrationPatterns.prototype.yearsAsArray = function () {
             Object.keys(this.data).map(function (key) {
-                console.log(key);
             });
         };
         return MigrationPatterns;
@@ -113,6 +109,7 @@
     var Table = /** @class */ (function () {
         function Table(data, container, svgDims) {
             this.headerLabels = ['Region', 'Inflow', 'Outflow', 'Total'];
+            this.currentData = data;
             // TODO Create the data table objects
             // TODO Need to define columns and css classes for various states and objects
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
@@ -126,16 +123,14 @@
                 this.axisHeader.append('td').text(l).on('click', this.labelListener);
             }
             this.tBody = this.table.append('tbody');
-            this.loadTable();
+            this.loadTable(2017);
         }
         /**
          * Class to refresh the data table for sorting, brush, or selections
          */
-        Table.prototype.loadTable = function () {
+        Table.prototype.loadTable = function (year) {
             console.debug('Loading data table');
-            this.tBody.enter().data(this.currentData, function (v, k) {
-                return k;
-            });
+            this.tBody.enter().data(this.currentData[year]);
         };
         Table.prototype.labelListener = function (l) {
             console.debug("Clicked " + l + " header");
