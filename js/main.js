@@ -69,7 +69,7 @@
         function MigrationPatterns(data) {
             // TODO review this data structure, may not be optimal
             this.years = [];
-            this.data = {};
+            this.data = new Map();
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var o = data_1[_i];
                 var curYear = +o.year;
@@ -79,6 +79,7 @@
                     var d = _b[_a];
                     var id = MigrationNodeId[d.state.clean()];
                     var node = {
+                        year: curYear,
                         nodeId: MigrationNodeId[d.state.clean()],
                         netImmigrationFlow: d.net_immigration_flow,
                         totalPopulation: +d.population,
@@ -101,11 +102,56 @@
                 //console.debug(this.data);
             }
         }
+        MigrationPatterns.prototype.yearsAsArray = function () {
+            Object.keys(this.data).map(function (key) {
+                console.log(key);
+            });
+        };
         return MigrationPatterns;
     }());
 
+    var Table = /** @class */ (function () {
+        function Table(data, container, svgDims) {
+            this.headerLabels = ['Region', 'Inflow', 'Outflow', 'Total'];
+            // TODO Create the data table objects
+            // TODO Need to define columns and css classes for various states and objects
+            console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
+            this.parentSvg = container.append('svg').attr('width', svgDims.width).attr('height', svgDims.height);
+            this.table = this.parentSvg.append('table');
+            this.header = this.table.append('thead');
+            this.axisHeader = this.header.append('tr');
+            this.titleHeader = this.header.append('tr');
+            for (var _i = 0, _a = this.headerLabels; _i < _a.length; _i++) {
+                var l = _a[_i];
+                this.axisHeader.append('td').text(l).on('click', this.labelListener);
+            }
+            this.tBody = this.table.append('tbody');
+            this.loadTable();
+        }
+        /**
+         * Class to refresh the data table for sorting, brush, or selections
+         */
+        Table.prototype.loadTable = function () {
+            console.debug('Loading data table');
+            this.tBody.enter().data(this.currentData, function (v, k) {
+                return k;
+            });
+        };
+        Table.prototype.labelListener = function (l) {
+            console.debug("Clicked " + l + " header");
+        };
+        return Table;
+    }());
+
+    var tableSelection = d3.select('.dataTable');
+    var tableDims = {
+        height: 1000,
+        width: 500
+    };
     d3.json('data/migration.json').then(function (data) {
-        new MigrationPatterns(data);
+        var migrationPatterns = new MigrationPatterns(data);
+        var table = new Table(migrationPatterns.data, tableSelection, tableDims);
+        console.log(migrationPatterns.yearsAsArray());
     });
 
 }(d3));

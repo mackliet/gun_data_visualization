@@ -79,6 +79,7 @@ export interface MigrationEdge {
 }
 
 export interface MigrationNode {
+    year: number
     nodeId: MigrationNodeId;
     edges: Map<MigrationNodeId, MigrationEdge>;
     netImmigrationFlow: number;
@@ -101,9 +102,10 @@ export class MigrationPatterns {
 
     // TODO review this data structure, may not be optimal
     public readonly years: Array<number> = [];
-    public readonly data: MigrationData = {};
+    public readonly data: Map<number, Map<MigrationNodeId, MigrationNode>>;
 
     constructor(data: Array<Year>){
+        this.data = new Map();
         for (const o of data) {
             const curYear = +o.year;
             this.years.push(curYear);
@@ -111,6 +113,7 @@ export class MigrationPatterns {
             for (const d of o.data){
                 const id = MigrationNodeId[d.state.clean()];
                 const node: MigrationNode = {
+                    year: curYear,
                     nodeId: MigrationNodeId[d.state.clean()],
                     netImmigrationFlow: d.net_immigration_flow,
                     totalPopulation: +d.population,
@@ -133,6 +136,12 @@ export class MigrationPatterns {
 
             //console.debug(this.data);
         }
+    }
+
+    yearsAsArray() {
+        Object.keys(this.data).map(key => {
+            console.log(key)
+        });
     }
 
 
