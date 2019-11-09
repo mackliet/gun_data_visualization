@@ -2,7 +2,7 @@
     'use strict';
 
     String.prototype.clean = function () {
-        return this.replace(/\s/g, "");
+        return this.replace(/\s/g, "_");
     };
     /**
      * Enumerator representing all 50 States, and other migration regions
@@ -17,7 +17,7 @@
         MigrationNodeId[MigrationNodeId["Colorado"] = 5] = "Colorado";
         MigrationNodeId[MigrationNodeId["Connecticut"] = 6] = "Connecticut";
         MigrationNodeId[MigrationNodeId["Delaware"] = 7] = "Delaware";
-        MigrationNodeId[MigrationNodeId["DistrictofColumbia"] = 8] = "DistrictofColumbia";
+        MigrationNodeId[MigrationNodeId["District of Columbia"] = 8] = "District of Columbia";
         MigrationNodeId[MigrationNodeId["Florida"] = 9] = "Florida";
         MigrationNodeId[MigrationNodeId["Georgia"] = 10] = "Georgia";
         MigrationNodeId[MigrationNodeId["Hawaii"] = 11] = "Hawaii";
@@ -38,35 +38,41 @@
         MigrationNodeId[MigrationNodeId["Montana"] = 26] = "Montana";
         MigrationNodeId[MigrationNodeId["Nebraska"] = 27] = "Nebraska";
         MigrationNodeId[MigrationNodeId["Nevada"] = 28] = "Nevada";
-        MigrationNodeId[MigrationNodeId["NewHampshire"] = 29] = "NewHampshire";
-        MigrationNodeId[MigrationNodeId["NewJersey"] = 30] = "NewJersey";
-        MigrationNodeId[MigrationNodeId["NewMexico"] = 31] = "NewMexico";
-        MigrationNodeId[MigrationNodeId["NewYork"] = 32] = "NewYork";
-        MigrationNodeId[MigrationNodeId["NorthCarolina"] = 33] = "NorthCarolina";
-        MigrationNodeId[MigrationNodeId["NorthDakota"] = 34] = "NorthDakota";
+        MigrationNodeId[MigrationNodeId["New Hampshire"] = 29] = "New Hampshire";
+        MigrationNodeId[MigrationNodeId["New Jersey"] = 30] = "New Jersey";
+        MigrationNodeId[MigrationNodeId["New Mexico"] = 31] = "New Mexico";
+        MigrationNodeId[MigrationNodeId["New York"] = 32] = "New York";
+        MigrationNodeId[MigrationNodeId["North Carolina"] = 33] = "North Carolina";
+        MigrationNodeId[MigrationNodeId["North Dakota"] = 34] = "North Dakota";
         MigrationNodeId[MigrationNodeId["Ohio"] = 35] = "Ohio";
         MigrationNodeId[MigrationNodeId["Oklahoma"] = 36] = "Oklahoma";
         MigrationNodeId[MigrationNodeId["Oregon"] = 37] = "Oregon";
         MigrationNodeId[MigrationNodeId["Pennsylvania"] = 38] = "Pennsylvania";
-        MigrationNodeId[MigrationNodeId["RhodeIsland"] = 39] = "RhodeIsland";
-        MigrationNodeId[MigrationNodeId["SouthCarolina"] = 40] = "SouthCarolina";
-        MigrationNodeId[MigrationNodeId["SouthDakota"] = 41] = "SouthDakota";
+        MigrationNodeId[MigrationNodeId["Rhode Island"] = 39] = "Rhode Island";
+        MigrationNodeId[MigrationNodeId["South Carolina"] = 40] = "South Carolina";
+        MigrationNodeId[MigrationNodeId["South Dakota"] = 41] = "South Dakota";
         MigrationNodeId[MigrationNodeId["Tennessee"] = 42] = "Tennessee";
         MigrationNodeId[MigrationNodeId["Texas"] = 43] = "Texas";
         MigrationNodeId[MigrationNodeId["Utah"] = 44] = "Utah";
         MigrationNodeId[MigrationNodeId["Vermont"] = 45] = "Vermont";
         MigrationNodeId[MigrationNodeId["Virginia"] = 46] = "Virginia";
         MigrationNodeId[MigrationNodeId["Washington"] = 47] = "Washington";
-        MigrationNodeId[MigrationNodeId["WestVirginia"] = 48] = "WestVirginia";
+        MigrationNodeId[MigrationNodeId["West Virginia"] = 48] = "West Virginia";
         MigrationNodeId[MigrationNodeId["Wisconsin"] = 49] = "Wisconsin";
         MigrationNodeId[MigrationNodeId["Wyoming"] = 50] = "Wyoming";
-        MigrationNodeId[MigrationNodeId["PuertoRico"] = 51] = "PuertoRico";
+        MigrationNodeId[MigrationNodeId["Puerto Rico"] = 51] = "Puerto Rico";
     })(MigrationNodeId || (MigrationNodeId = {}));
     /**
      * Data structure that contains all the state migration data, immutable
      */
     var MigrationPatterns = /** @class */ (function () {
         function MigrationPatterns(data) {
+            this.minSum = Number.MAX_VALUE;
+            this.maxSum = 0;
+            this.minInflow = Number.MAX_VALUE;
+            this.maxInflow = 0;
+            this.minOutflow = Number.MAX_VALUE;
+            this.maxOutflow = 0;
             this.data = {};
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var o = data_1[_i];
@@ -74,19 +80,40 @@
                 this.data[curYear] = [];
                 for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
                     var d = _b[_a];
-                    var id = MigrationNodeId[d.state.clean()];
+                    var id = MigrationNodeId[d.state.trim()];
                     var node = {
                         year: curYear,
-                        nodeId: MigrationNodeId[d.state.clean()],
+                        nodeId: MigrationNodeId[d.state.trim()],
                         netImmigrationFlow: d.net_immigration_flow,
                         totalPopulation: +d.population,
                         totalCame: d.total_came,
                         totalLeft: d.total_left,
                         edges: new Map()
                     };
+                    /**
+                     * Check totals get max values
+                     */
+                    if (node.totalLeft > this.maxOutflow) {
+                        this.maxOutflow = node.totalLeft;
+                    }
+                    if (node.totalLeft < this.minOutflow) {
+                        this.minOutflow = node.totalLeft;
+                    }
+                    if (node.totalCame > this.maxInflow) {
+                        this.maxInflow = node.totalLeft;
+                    }
+                    if (node.totalCame < this.minInflow) {
+                        this.minInflow = node.totalCame;
+                    }
+                    if (node.netImmigrationFlow > this.maxSum) {
+                        this.maxSum = node.totalLeft;
+                    }
+                    if (node.netImmigrationFlow < this.minSum) {
+                        this.minSum = node.netImmigrationFlow;
+                    }
                     for (var _c = 0, _d = d.left_to; _c < _d.length; _c++) {
                         var edge = _d[_c];
-                        var toNodeId = MigrationNodeId[edge.state.clean()];
+                        var toNodeId = MigrationNodeId[edge.state.trim()];
                         node.edges[toNodeId] = {
                             fromMigrationRegion: id,
                             toMigrationRegion: toNodeId,
@@ -98,6 +125,8 @@
                 }
             }
             console.info(this.data);
+            console.info("Max values: \nMax Inflow: " + this.maxInflow + ", Max Outflow: " + this.maxOutflow + ", Max Total: " + this.maxSum + "\n " +
+                ("Min values: \nMin Inflow " + this.maxInflow + ", Min Outflow: " + this.minOutflow + ", Min Total: " + this.minSum + " "));
         }
         MigrationPatterns.prototype.yearsAsArray = function () {
             Object.keys(this.data).map(function (key) {
@@ -107,33 +136,80 @@
     }());
 
     var Table = /** @class */ (function () {
-        function Table(data, container, svgDims) {
-            this.headerLabels = ['Region', 'Inflow', 'Outflow', 'Total'];
-            this.currentData = data;
+        /**
+         *
+         * @param data data to bind to the view
+         * @param container HTML selection where the view will be placed in
+         * @param svgDims dimensions of the SVG
+         * @param startYear year to start the visualization
+         */
+        function Table(migrationPatterns, container, svgDims, startYear) {
+            if (startYear === void 0) { startYear = 2017; }
+            // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
+            this.headerLabels = ['Region', 'Total Flow'];
+            /**
+             * Table constants
+             */
+            this.RECT_WIDTH = 100;
+            this.currentData = migrationPatterns.data;
             // TODO Create the data table objects
             // TODO Need to define columns and css classes for various states and objects
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
-            this.parentSvg = container.append('svg').attr('width', svgDims.width).attr('height', svgDims.height);
-            this.table = this.parentSvg.append('table');
+            this.flowScale = d3.scaleLinear().range([0, this.RECT_WIDTH])
+                .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
+            this.table = container.append('table');
             this.header = this.table.append('thead');
             this.axisHeader = this.header.append('tr');
             this.titleHeader = this.header.append('tr');
             for (var _i = 0, _a = this.headerLabels; _i < _a.length; _i++) {
                 var l = _a[_i];
-                this.axisHeader.append('td').text(l).on('click', this.labelListener);
+                this.axisHeader.append('th').text(l).on('click', this.labelListener);
             }
             this.tBody = this.table.append('tbody');
-            this.loadTable(2017);
+            this.loadTable(startYear);
         }
         /**
          * Class to refresh the data table for sorting, brush, or selections
          */
         Table.prototype.loadTable = function (year) {
             console.debug('Loading data table');
-            this.tBody.enter().data(this.currentData[year]);
+            var rows = this.tBody.selectAll('tr').data(this.currentData[year]).enter().append('tr');
+            for (var _i = 0, _a = this.headerLabels; _i < _a.length; _i++) {
+                var header = _a[_i];
+                console.debug("calling " + header.clean() + " method");
+                this[header.toLocaleLowerCase().clean()](rows);
+            }
         };
         Table.prototype.labelListener = function (l) {
             console.debug("Clicked " + l + " header");
+        };
+        Table.prototype.region = function (rows) {
+            console.debug("entering region column creation method");
+            rows.append('td').append('text').text(function (d) {
+                return MigrationNodeId[d.nodeId];
+            });
+        };
+        Table.prototype.total_flow = function (rows) {
+            var _this = this;
+            console.debug("entering inflow column creation method");
+            var svg = rows.append('td').append('svg').attr('width', 100).attr('height', 20);
+            svg.append('rect').attr('x', function (d) {
+                if (d.netImmigrationFlow < 0) {
+                    return _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
+                }
+                return _this.flowScale(0);
+            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+                console.debug(MigrationNodeId[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
+                var flow = _this.flowScale(d.netImmigrationFlow);
+                return flow;
+            }).attr('fill', function (d) {
+                if (d.netImmigrationFlow < 0) {
+                    return 'red';
+                }
+                else {
+                    return 'blue';
+                }
+            });
         };
         return Table;
     }());
@@ -145,7 +221,7 @@
     };
     d3.json('data/migration.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
-        var table = new Table(migrationPatterns.data, tableSelection, tableDims);
+        var table = new Table(migrationPatterns, tableSelection, tableDims);
         console.log(migrationPatterns.yearsAsArray());
     });
 

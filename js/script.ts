@@ -11,6 +11,6 @@ const tableDims = {
 
 d3.json('data/migration.json').then((data) => {
     const migrationPatterns = new MigrationPatterns(data);
-    const table = new Table(migrationPatterns.data, tableSelection, tableDims);
+    const table = new Table(migrationPatterns, tableSelection, tableDims);
     console.log(migrationPatterns.yearsAsArray())
 });

@@ -8,15 +8,3 @@
     padding-right: 100px;
     max-width: 1800px;
 }
-
-tr {
-    max-height: 27px;
-}
-td {
-    padding: 0;
-    max-height: 27px;
-}
-
-table {
-    table-layout: fixed;
-}
