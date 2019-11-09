@@ -2,6 +2,13 @@
 package-lock.json
 **/node_modules/
 
+#Test outputs
+junit.xml
+
+#javascript stuff
+**/*.js
+!js/main.js
+
 #Python specific
 
 
