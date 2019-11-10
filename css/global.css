@@ -8,3 +8,7 @@
     padding-right: 100px;
     max-width: 1800px;
 }
+
+.view {
+    float: left;
+}

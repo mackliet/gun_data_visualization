@@ -1,4 +1,4 @@
-(function (d3) {
+(function (d3, topojson) {
     'use strict';
 
     String.prototype.clean = function () {
@@ -253,15 +253,49 @@
         return Table;
     }());
 
+    var HeatMap = /** @class */ (function () {
+        function HeatMap(patterns, container, svgDims, startYear) {
+            if (startYear === void 0) { startYear = 2017; }
+            this.curYear = startYear;
+            this.currentData = patterns.data;
+            var path = d3.geoPath();
+            var svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
+            d3.json("https://d3js.org/us-10m.v1.json").then(function (us) {
+                console.log("Display US Map");
+                // States
+                //@ts-ignore
+                svg.append('g').selectAll('path').data(topojson.feature(us, us.objects.states).features).enter()
+                    .append('path').attr('d', path).attr("class", "states");
+                // Borders
+                svg.append("path")
+                    .attr("class", "state-borders")
+                    .attr("d", path(topojson.mesh(us, us.objects.states, function (a, b) { return a !== b; })));
+            });
+        }
+        HeatMap.prototype.initMap = function () {
+        };
+        HeatMap.prototype.showFullMap = function () {
+        };
+        HeatMap.prototype.focusNode = function (migrationNode) {
+        };
+        return HeatMap;
+    }());
+
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
         height: 1000,
         width: 500
     };
+    var geoSelection = d3.select('.geoHeat');
+    var geoDims = {
+        height: 1000,
+        width: 1000
+    };
     d3.json('data/migration.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
         var table = new Table(migrationPatterns, tableSelection, tableDims);
-        console.log(migrationPatterns.yearsAsArray());
+        var geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+        // console.log(migrationPatterns.yearsAsArray())
     });
 
-}(d3));
+}(d3, topojson));

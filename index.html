@@ -9,21 +9,22 @@
     <script src="https://d3js.org/d3-color.v1.min.js"></script>
     <script src="https://d3js.org/d3-selection.v1.min.js"></script>
     <script src="https://d3js.org/d3-transition.v1.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
     <!-- Links -->
     <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <!-- Local Stylesheets -->
+    <link rel="stylesheet" href="css/geo.css"/>
     <link rel="stylesheet" href="css/table.css"/>
     <link rel="stylesheet" href="css/global.css"/>
 </head>
 <body>
 <!-- Primary Container TODO determine layout for interactions.  What is the central question and which chart shows that?  Focus there -->
 <div class="container">
-    <div class="view dataTable">
-
-    </div>
+    <div class="view geoHeat"></div>
+    <div class="view dataTable"></div>
 </div>
 <!-- Global variable for typescript compatibiblity TODO May not be necessary -->
 <script> const exports = {}; </script>
