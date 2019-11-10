@@ -82,7 +82,9 @@ export class Table implements IView {
 
     private total_flow(rows: Selection<any, any, any, any>) {
         console.debug("entering inflow column creation method");
-        const svg = rows.append('td').append('svg').attr('width', this.RECT_WIDTH).attr('height', 20);
+        const tds = rows.append('td'); tds.attr('class','svg')//.append('div').attr('max-height', 20);
+        const svg = tds.append('svg').attr('width', this.RECT_WIDTH).style('max-height', '100%')
+            .style('display', 'block');
         /**
          * Create net rectangle.  Blue for net inflow, red for net outflow
          */
@@ -91,10 +93,10 @@ export class Table implements IView {
                 return this.flowScale(d.netImmigrationFlow);
             }
             return this.flowScale(0);
-        }).attr('y', 0).attr('height', 20).attr('width', (d) => {
+        }).attr('y', 0).attr('height', 5).attr('width', (d) => {
             console.debug(`${MigrationNodeId[d.nodeId]}: ${d.netImmigrationFlow}, ${this.flowScale(d.netImmigrationFlow)}`);
             const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
-            return flow;
+            return flow < 0 ? 0 : flow;
         }).attr('fill', (d) => {
             if (d.netImmigrationFlow < 0) {
                 return 'red';
@@ -110,7 +112,7 @@ export class Table implements IView {
                 return this.flowScale(0);
             }
             return this.flowScale(0);
-        }).attr('y', 0).attr('height', 20).attr('width', (d) => {
+        }).attr('y', 5).attr('height', 5).attr('width', (d) => {
             console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
             const width = this.flowScale(d.totalCame) - this.flowScale(0);
             return width;
@@ -124,10 +126,15 @@ export class Table implements IView {
                 return this.flowScale(0)
             }
             return this.flowScale(d.netImmigrationFlow);
-        }).attr('y', 0).attr('height', 20).attr('width', (d) => {
+        }).attr('y', 10).attr('height', 5).attr('width', (d) => {
             console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
-            const width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
-                (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
+            let width;
+            if (d.netImmigrationFlow < 0) {
+                width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
+                    (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
+            } else {
+                width = (this.flowScale(d.totalCame) - this.flowScale(d.netImmigrationFlow));
+            }
             return width;
         }).attr('fill', 'purple');
     }

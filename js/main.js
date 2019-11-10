@@ -192,7 +192,10 @@
         Table.prototype.total_flow = function (rows) {
             var _this = this;
             console.debug("entering inflow column creation method");
-            var svg = rows.append('td').append('svg').attr('width', this.RECT_WIDTH).attr('height', 20);
+            var tds = rows.append('td');
+            tds.attr('class', 'svg'); //.append('div').attr('max-height', 20);
+            var svg = tds.append('svg').attr('width', this.RECT_WIDTH).style('max-height', '100%')
+                .style('display', 'block');
             /**
              * Create net rectangle.  Blue for net inflow, red for net outflow
              */
@@ -201,10 +204,10 @@
                     return _this.flowScale(d.netImmigrationFlow);
                 }
                 return _this.flowScale(0);
-            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+            }).attr('y', 0).attr('height', 5).attr('width', function (d) {
                 console.debug(MigrationNodeId[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
                 var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
-                return flow;
+                return flow < 0 ? 0 : flow;
             }).attr('fill', function (d) {
                 if (d.netImmigrationFlow < 0) {
                     return 'red';
@@ -221,7 +224,7 @@
                     return _this.flowScale(0);
                 }
                 return _this.flowScale(0);
-            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+            }).attr('y', 5).attr('height', 5).attr('width', function (d) {
                 console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
                 var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
                 return width;
@@ -234,10 +237,16 @@
                     return _this.flowScale(0);
                 }
                 return _this.flowScale(d.netImmigrationFlow);
-            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+            }).attr('y', 10).attr('height', 5).attr('width', function (d) {
                 console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
-                var width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
-                    (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
+                var width;
+                if (d.netImmigrationFlow < 0) {
+                    width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
+                        (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
+                }
+                else {
+                    width = (_this.flowScale(d.totalCame) - _this.flowScale(d.netImmigrationFlow));
+                }
                 return width;
             }).attr('fill', 'purple');
         };
