@@ -260,12 +260,19 @@
             this.currentData = patterns.data;
             var path = d3.geoPath();
             var svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
-            d3.json("https://d3js.org/us-10m.v1.json").then(function (us) {
+            /**
+             * Adapted from https://bl.ocks.org/mbostock/4090848
+             */
+            d3.json("https://d3js.org/us-10m.v2.json").then(function (us) {
                 console.log("Display US Map");
                 // States
                 //@ts-ignore
                 svg.append('g').selectAll('path').data(topojson.feature(us, us.objects.states).features).enter()
-                    .append('path').attr('d', path).attr("class", "states");
+                    .append('path').attr('d', path).attr("class", "states").on('mouseover', function (d) {
+                    var name = d.properties.name;
+                    console.log(d.properties.name);
+                    console.log(MigrationNodeId[name]);
+                });
                 // Borders
                 svg.append("path")
                     .attr("class", "state-borders")
