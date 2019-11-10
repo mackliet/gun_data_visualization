@@ -126,7 +126,7 @@
             }
             console.info(this.data);
             console.info("Max values: \nMax Inflow: " + this.maxInflow + ", Max Outflow: " + this.maxOutflow + ", Max Total: " + this.maxSum + "\n " +
-                ("Min values: \nMin Inflow " + this.maxInflow + ", Min Outflow: " + this.minOutflow + ", Min Total: " + this.minSum + " "));
+                ("Min values: \nMin Inflow " + this.minInflow + ", Min Outflow: " + this.minOutflow + ", Min Total: " + this.minSum + " "));
         }
         MigrationPatterns.prototype.yearsAsArray = function () {
             Object.keys(this.data).map(function (key) {
@@ -150,7 +150,7 @@
             /**
              * Table constants
              */
-            this.RECT_WIDTH = 100;
+            this.RECT_WIDTH = 200;
             this.currentData = migrationPatterns.data;
             // TODO Create the data table objects
             // TODO Need to define columns and css classes for various states and objects
@@ -192,15 +192,18 @@
         Table.prototype.total_flow = function (rows) {
             var _this = this;
             console.debug("entering inflow column creation method");
-            var svg = rows.append('td').append('svg').attr('width', 100).attr('height', 20);
+            var svg = rows.append('td').append('svg').attr('width', this.RECT_WIDTH).attr('height', 20);
+            /**
+             * Create net rectangle.  Blue for net inflow, red for net outflow
+             */
             svg.append('rect').attr('x', function (d) {
                 if (d.netImmigrationFlow < 0) {
-                    return _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
+                    return _this.flowScale(d.netImmigrationFlow);
                 }
                 return _this.flowScale(0);
             }).attr('y', 0).attr('height', 20).attr('width', function (d) {
                 console.debug(MigrationNodeId[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
-                var flow = _this.flowScale(d.netImmigrationFlow);
+                var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
                 return flow;
             }).attr('fill', function (d) {
                 if (d.netImmigrationFlow < 0) {
@@ -210,6 +213,33 @@
                     return 'blue';
                 }
             });
+            /**
+             * Create net rectangle.  Blue for net inflow, red for net outflow
+             */
+            svg.append('rect').attr('x', function (d) {
+                if (d.netImmigrationFlow < 0) {
+                    return _this.flowScale(0);
+                }
+                return _this.flowScale(0);
+            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+                console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
+                var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
+                return width;
+            }).attr('fill', 'blue');
+            /**
+             * Create difference rectangle.  Should be purple until it ends
+             */
+            svg.append('rect').attr('x', function (d) {
+                if (d.netImmigrationFlow < 0) {
+                    return _this.flowScale(0);
+                }
+                return _this.flowScale(d.netImmigrationFlow);
+            }).attr('y', 0).attr('height', 20).attr('width', function (d) {
+                console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
+                var width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
+                    (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
+                return width;
+            }).attr('fill', 'purple');
         };
         return Table;
     }());

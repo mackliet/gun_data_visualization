@@ -29,7 +29,7 @@ export class Table implements IView {
     /**
      * Table constants
      */
-    private readonly RECT_WIDTH = 100;
+    private readonly RECT_WIDTH = 200;
 
     /**
      *
@@ -82,18 +82,19 @@ export class Table implements IView {
 
     private total_flow(rows: Selection<any, any, any, any>) {
         console.debug("entering inflow column creation method");
-        const svg = rows.append('td').append('svg').attr('width', 100).attr('height', 20);
+        const svg = rows.append('td').append('svg').attr('width', this.RECT_WIDTH).attr('height', 20);
+        /**
+         * Create net rectangle.  Blue for net inflow, red for net outflow
+         */
         svg.append('rect').attr('x', (d) => {
             if (d.netImmigrationFlow < 0) {
-                return this.flowScale(0) - this.flowScale(d.netImmigrationFlow)
+                return this.flowScale(d.netImmigrationFlow);
             }
-            return this.flowScale(0)
+            return this.flowScale(0);
         }).attr('y', 0).attr('height', 20).attr('width', (d) => {
             console.debug(`${MigrationNodeId[d.nodeId]}: ${d.netImmigrationFlow}, ${this.flowScale(d.netImmigrationFlow)}`);
-            const flow = this.flowScale(d.netImmigrationFlow);
+            const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
             return flow;
-
-
         }).attr('fill', (d) => {
             if (d.netImmigrationFlow < 0) {
                 return 'red';
@@ -101,6 +102,34 @@ export class Table implements IView {
                 return 'blue';
             }
         });
+        /**
+         * Create net rectangle.  Blue for net inflow, red for net outflow
+         */
+        svg.append('rect').attr('x', (d) => {
+            if (d.netImmigrationFlow < 0) {
+                return this.flowScale(0);
+            }
+            return this.flowScale(0);
+        }).attr('y', 0).attr('height', 20).attr('width', (d) => {
+            console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
+            const width = this.flowScale(d.totalCame) - this.flowScale(0);
+            return width;
+        }).attr('fill', 'blue');
+
+        /**
+         * Create difference rectangle.  Should be purple until it ends
+         */
+        svg.append('rect').attr('x', (d) => {
+            if (d.netImmigrationFlow < 0) {
+                return this.flowScale(0)
+            }
+            return this.flowScale(d.netImmigrationFlow);
+        }).attr('y', 0).attr('height', 20).attr('width', (d) => {
+            console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
+            const width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
+                (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
+            return width;
+        }).attr('fill', 'purple');
     }
 
 }

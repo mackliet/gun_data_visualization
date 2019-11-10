@@ -164,7 +164,7 @@ export class MigrationPatterns {
         }
         console.info(this.data);
         console.info(`Max values: \nMax Inflow: ${this.maxInflow}, Max Outflow: ${this.maxOutflow}, Max Total: ${this.maxSum}\n ` +
-                                `Min values: \nMin Inflow ${this.maxInflow}, Min Outflow: ${this.minOutflow}, Min Total: ${this.minSum} `)
+                                `Min values: \nMin Inflow ${this.minInflow}, Min Outflow: ${this.minOutflow}, Min Total: ${this.minSum} `)
     }
 
     yearsAsArray() {
