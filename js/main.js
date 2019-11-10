@@ -264,14 +264,14 @@
              * Adapted from https://bl.ocks.org/mbostock/4090848
              */
             d3.json("https://d3js.org/us-10m.v2.json").then(function (us) {
-                console.log("Display US Map");
+                console.debug("Display US Map");
                 // States
                 //@ts-ignore
                 svg.append('g').selectAll('path').data(topojson.feature(us, us.objects.states).features).enter()
                     .append('path').attr('d', path).attr("class", "states").on('mouseover', function (d) {
                     var name = d.properties.name;
-                    console.log(d.properties.name);
-                    console.log(MigrationNodeId[name]);
+                    var nodeId = MigrationNodeId[name];
+                    console.debug(name);
                 });
                 // Borders
                 svg.append("path")
@@ -288,6 +288,19 @@
         return HeatMap;
     }());
 
+    var ChordDiagram = /** @class */ (function () {
+        function ChordDiagram(patterns, container, svgDims, startYear) {
+            this.curYear = 2017;
+            this.currentData = patterns.data;
+            container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
+        }
+        ChordDiagram.prototype.showFullChord = function () {
+        };
+        ChordDiagram.prototype.focusNode = function (migrationNode) {
+        };
+        return ChordDiagram;
+    }());
+
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
         height: 1000,
@@ -295,13 +308,19 @@
     };
     var geoSelection = d3.select('.geoHeat');
     var geoDims = {
-        height: 1000,
+        height: 650,
+        width: 1000
+    };
+    var chordSelection = d3.select('.chord');
+    var chordDims = {
+        height: 500,
         width: 1000
     };
     d3.json('data/migration.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
         var table = new Table(migrationPatterns, tableSelection, tableDims);
         var geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+        var chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims);
         // console.log(migrationPatterns.yearsAsArray())
     });
 

@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import {MigrationPatterns} from "./Data/MigrationPatterns";
 import {Table} from "./Views/Table";
 import {HeatMap} from "./Views/HeatMap";
+import {ChordDiagram} from "./Views/ChordDiagram";
 
 const tableSelection = d3.select('.dataTable');
 const tableDims = {
@@ -10,7 +11,12 @@ const tableDims = {
 };
 const geoSelection = d3.select('.geoHeat');
 const geoDims = {
-    height: 1000,
+    height: 650,
+    width: 1000
+};
+const chordSelection = d3.select('.chord');
+const chordDims = {
+    height: 500,
     width: 1000
 };
 
@@ -18,5 +24,6 @@ d3.json('data/migration.json').then((data) => {
     const migrationPatterns = new MigrationPatterns(data);
     const table = new Table(migrationPatterns, tableSelection, tableDims);
     const geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+    const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     // console.log(migrationPatterns.yearsAsArray())
 });
