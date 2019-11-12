@@ -1,0 +1,32 @@
+table, th, td {
+    border-collapse: collapse;
+}
+
+table {
+    table-layout: fixed;
+}
+
+th {
+    border: 2px solid black;
+}
+
+td {
+    font-size: 1rem;
+    line-height: 0px;
+    border: 1px solid black;
+    overflow: hidden;
+    max-height: 20px;
+    height: 20px;
+}
+
+td.svg {
+    border-bottom: 0px;
+    border-top: 0px;
+}
+
+svg {
+    height: 100%;
+    display: block;
+
+    height: 20px;
+}

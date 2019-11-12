@@ -11,7 +11,8 @@
   "scripts": {
     "test": "LOG_LEVEL=error jest",
     "clean": "tsc --build --clean",
-    "build": "rollup js/script.js --file js/main.js --format iife"
+    "build": "rollup js/script.js --file js/main.js --format iife",
+    "serve": "python3 -m http.server"
   },
   "devDependencies": {
     "@types/d3": "^5.7.2",
