@@ -9,6 +9,6 @@
     max-width: 1800px;
 }
 
-.view {
+.left, .dataTable {
     float: left;
 }

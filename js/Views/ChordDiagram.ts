@@ -1,15 +1,20 @@
 import {IView} from "./IView";
-import {MigrationData, MigrationNodeId} from "../Data/MigrationPatterns";
+import {MigrationData, MigrationNodeId, MigrationPatterns} from "../Data/MigrationPatterns";
+import {Selection} from "d3-selection";
+import {Dimensions} from "../Utils/svg-utils";
 
 
-class ChordDiagram implements IView {
+export class ChordDiagram implements IView {
 
     readonly curYear: number;
     readonly currentData: MigrationData;
 
-    constructor(data: MigrationData) {
+    constructor(patterns: MigrationPatterns, container: Selection<any, any, any, any>,
+                svgDims: Dimensions, startYear: number = 2017) {
 
-        this.currentData = data;
+        this.curYear = 2017;
+        this.currentData = patterns.data;
+        container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
 
     }
 
