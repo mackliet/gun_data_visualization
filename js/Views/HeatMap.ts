@@ -7,11 +7,13 @@ import {IView} from "./IView";
 import {MigrationData, MigrationNodeId, MigrationPatterns} from "../Data/MigrationPatterns";
 import {Dimensions} from "../Utils/svg-utils";
 
-const borderId = (name) => {
+const borderId = (name: string) => {
+    name = name.replace(/\s/g, "");
     return `border${name}`;
 };
 
-const stateId = (name) => {
+const stateId = (name: string) => {
+    name = name.replace(/\s/g, "");
     return `state${name}`;
 };
 
@@ -82,7 +84,7 @@ export class HeatMap implements IView {
         const nodeId = MigrationNodeId[name];
         const t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
         console.log(t, this.colorScale(t));
-        return d3.interpolatePiYG(this.colorScale(t))
+        return d3.interpolateRdBu(this.colorScale(t))
     }
 
 

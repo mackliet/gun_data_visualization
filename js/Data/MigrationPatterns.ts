@@ -1,15 +1,5 @@
 import {Year} from "./ImportData";
 
-// TODO Move this global stuff in some super utility class that is executed before everything else
-declare global {
-    interface String {
-        clean(): string
-    }
-}
-
-String.prototype.clean = function (this: string) {
-    return this.replace(/\s/g, "_")
-};
 /**
  * Enumerator representing all 50 States, and other migration regions
  */

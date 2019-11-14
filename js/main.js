@@ -1,9 +1,6 @@
 (function (d3, topojson) {
     'use strict';
 
-    String.prototype.clean = function () {
-        return this.replace(/\s/g, "_");
-    };
     /**
      * Enumerator representing all 50 States, and other migration regions
      */
@@ -254,6 +251,7 @@
     }());
 
     var stateId = function (name) {
+        name = name.replace(/\s/g, "");
         return "state" + name;
     };
     var HeatMap = /** @class */ (function () {
@@ -310,11 +308,14 @@
             var nodeId = MigrationNodeId[name];
             var t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
             console.log(t, this.colorScale(t));
-            return d3.interpolatePiYG(this.colorScale(t));
+            return d3.interpolateRdBu(this.colorScale(t));
         };
         return HeatMap;
     }());
 
+    String.prototype.clean = function () {
+        return this.replace(/\s/g, "_");
+    };
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
         height: 1000,

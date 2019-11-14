@@ -4,6 +4,17 @@ import {Table} from "./Views/Table";
 import {HeatMap} from "./Views/HeatMap";
 import {ChordDiagram} from "./Views/ChordDiagram";
 
+// TODO Move this global stuff in some super utility class that is executed before everything else
+declare global {
+    interface String {
+        clean(): string
+    }
+}
+
+String.prototype.clean = function (this: string) {
+    return this.replace(/\s/g, "_")
+};
+
 const tableSelection = d3.select('.dataTable');
 const tableDims = {
     height: 1000,
