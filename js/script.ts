@@ -14,16 +14,18 @@ const geoDims = {
     height: 650,
     width: 1000
 };
-const chordSelection = d3.select('.chord');
-const chordDims = {
-    height: 500,
-    width: 1000
-};
+
+// TODO Chord Diagram Integration
+// const chordSelection = d3.select('.chord');
+// const chordDims = {
+//     height: 500,
+//     width: 1000
+// };
 
 d3.json('data/migration.json').then((data) => {
     const migrationPatterns = new MigrationPatterns(data);
     const table = new Table(migrationPatterns, tableSelection, tableDims);
     const geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-    const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
-    // console.log(migrationPatterns.yearsAsArray())
+    // TODO Chord Diagram Integration
+    // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
 });
