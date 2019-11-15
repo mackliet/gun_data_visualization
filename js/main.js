@@ -1,9 +1,6 @@
 (function (d3, topojson) {
     'use strict';
 
-    String.prototype.clean = function () {
-        return this.replace(/\s/g, "_");
-    };
     /**
      * Enumerator representing all 50 States, and other migration regions
      */
@@ -253,11 +250,17 @@
         return Table;
     }());
 
+    var stateId = function (name) {
+        name = name.replace(/\s/g, "");
+        return "state" + name;
+    };
     var HeatMap = /** @class */ (function () {
         function HeatMap(patterns, container, svgDims, startYear) {
+            var _this = this;
             if (startYear === void 0) { startYear = 2017; }
             this.curYear = startYear;
             this.currentData = patterns.data;
+            this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
             var path = d3.geoPath();
             var svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
             /**
@@ -265,15 +268,29 @@
              */
             d3.json("https://d3js.org/us-10m.v2.json").then(function (us) {
                 console.debug("Display US Map");
+                console.debug(_this.currentData[_this.curYear]);
                 // States
                 //@ts-ignore
                 svg.append('g').selectAll('path').data(topojson.feature(us, us.objects.states).features).enter()
-                    .append('path').attr('d', path).attr("class", "states").on('mouseover', function (d) {
+                    .append('path').attr('d', path).attr("class", "states")
+                    .attr('id', function (d) {
+                    return stateId(d.properties.name);
+                })
+                    .style('fill', function (d) {
+                    return _this.stateFill(d);
+                })
+                    .on('mouseover', function (d) {
                     var name = d.properties.name;
                     var nodeId = MigrationNodeId[name];
                     console.debug(name);
+                    var id = stateId(d.properties.name);
+                    d3.select("#" + id).style('fill', 'darkgray');
+                }).on('mouseout', function (d) {
+                    var id = stateId(d.properties.name);
+                    d3.select("#" + id).style('fill', _this.stateFill(d));
                 });
                 // Borders
+                //@ts-ignore
                 svg.append("path")
                     .attr("class", "state-borders")
                     .attr("d", path(topojson.mesh(us, us.objects.states, function (a, b) { return a !== b; })));
@@ -285,22 +302,20 @@
         };
         HeatMap.prototype.focusNode = function (migrationNode) {
         };
+        HeatMap.prototype.stateFill = function (d) {
+            console.log(d);
+            var name = d.properties.name;
+            var nodeId = MigrationNodeId[name];
+            var t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+            console.log(t, this.colorScale(t));
+            return d3.interpolateRdBu(this.colorScale(t));
+        };
         return HeatMap;
     }());
 
-    var ChordDiagram = /** @class */ (function () {
-        function ChordDiagram(patterns, container, svgDims, startYear) {
-            this.curYear = 2017;
-            this.currentData = patterns.data;
-            container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
-        }
-        ChordDiagram.prototype.showFullChord = function () {
-        };
-        ChordDiagram.prototype.focusNode = function (migrationNode) {
-        };
-        return ChordDiagram;
-    }());
-
+    String.prototype.clean = function () {
+        return this.replace(/\s/g, "_");
+    };
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
         height: 1000,
@@ -311,17 +326,18 @@
         height: 650,
         width: 1000
     };
-    var chordSelection = d3.select('.chord');
-    var chordDims = {
-        height: 500,
-        width: 1000
-    };
+    // TODO Chord Diagram Integration
+    // const chordSelection = d3.select('.chord');
+    // const chordDims = {
+    //     height: 500,
+    //     width: 1000
+    // };
     d3.json('data/migration.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
         var table = new Table(migrationPatterns, tableSelection, tableDims);
         var geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-        var chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims);
-        // console.log(migrationPatterns.yearsAsArray())
+        // TODO Chord Diagram Integration
+        // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     });
 
 }(d3, topojson));
