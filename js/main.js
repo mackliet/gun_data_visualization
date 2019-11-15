@@ -57,7 +57,6 @@
         MigrationNodeId[MigrationNodeId["West Virginia"] = 48] = "West Virginia";
         MigrationNodeId[MigrationNodeId["Wisconsin"] = 49] = "Wisconsin";
         MigrationNodeId[MigrationNodeId["Wyoming"] = 50] = "Wyoming";
-        MigrationNodeId[MigrationNodeId["Puerto Rico"] = 51] = "Puerto Rico";
     })(MigrationNodeId || (MigrationNodeId = {}));
     /**
      * Data structure that contains all the state migration data, immutable
@@ -131,6 +130,91 @@
         };
         return MigrationPatterns;
     }());
+
+    /**
+     * Enumerator representing all 50 States and DC
+     */
+    var State_id;
+    (function (State_id) {
+        State_id[State_id["Alabama"] = 0] = "Alabama";
+        State_id[State_id["Alaska"] = 1] = "Alaska";
+        State_id[State_id["Arizona"] = 2] = "Arizona";
+        State_id[State_id["Arkansas"] = 3] = "Arkansas";
+        State_id[State_id["California"] = 4] = "California";
+        State_id[State_id["Colorado"] = 5] = "Colorado";
+        State_id[State_id["Connecticut"] = 6] = "Connecticut";
+        State_id[State_id["Delaware"] = 7] = "Delaware";
+        State_id[State_id["District of Columbia"] = 8] = "District of Columbia";
+        State_id[State_id["Florida"] = 9] = "Florida";
+        State_id[State_id["Georgia"] = 10] = "Georgia";
+        State_id[State_id["Hawaii"] = 11] = "Hawaii";
+        State_id[State_id["Idaho"] = 12] = "Idaho";
+        State_id[State_id["Illinois"] = 13] = "Illinois";
+        State_id[State_id["Indiana"] = 14] = "Indiana";
+        State_id[State_id["Iowa"] = 15] = "Iowa";
+        State_id[State_id["Kansas"] = 16] = "Kansas";
+        State_id[State_id["Kentucky"] = 17] = "Kentucky";
+        State_id[State_id["Louisiana"] = 18] = "Louisiana";
+        State_id[State_id["Maine"] = 19] = "Maine";
+        State_id[State_id["Maryland"] = 20] = "Maryland";
+        State_id[State_id["Massachusetts"] = 21] = "Massachusetts";
+        State_id[State_id["Michigan"] = 22] = "Michigan";
+        State_id[State_id["Minnesota"] = 23] = "Minnesota";
+        State_id[State_id["Mississippi"] = 24] = "Mississippi";
+        State_id[State_id["Missouri"] = 25] = "Missouri";
+        State_id[State_id["Montana"] = 26] = "Montana";
+        State_id[State_id["Nebraska"] = 27] = "Nebraska";
+        State_id[State_id["Nevada"] = 28] = "Nevada";
+        State_id[State_id["New Hampshire"] = 29] = "New Hampshire";
+        State_id[State_id["New Jersey"] = 30] = "New Jersey";
+        State_id[State_id["New Mexico"] = 31] = "New Mexico";
+        State_id[State_id["New York"] = 32] = "New York";
+        State_id[State_id["North Carolina"] = 33] = "North Carolina";
+        State_id[State_id["North Dakota"] = 34] = "North Dakota";
+        State_id[State_id["Ohio"] = 35] = "Ohio";
+        State_id[State_id["Oklahoma"] = 36] = "Oklahoma";
+        State_id[State_id["Oregon"] = 37] = "Oregon";
+        State_id[State_id["Pennsylvania"] = 38] = "Pennsylvania";
+        State_id[State_id["Rhode Island"] = 39] = "Rhode Island";
+        State_id[State_id["South Carolina"] = 40] = "South Carolina";
+        State_id[State_id["South Dakota"] = 41] = "South Dakota";
+        State_id[State_id["Tennessee"] = 42] = "Tennessee";
+        State_id[State_id["Texas"] = 43] = "Texas";
+        State_id[State_id["Utah"] = 44] = "Utah";
+        State_id[State_id["Vermont"] = 45] = "Vermont";
+        State_id[State_id["Virginia"] = 46] = "Virginia";
+        State_id[State_id["Washington"] = 47] = "Washington";
+        State_id[State_id["West Virginia"] = 48] = "West Virginia";
+        State_id[State_id["Wisconsin"] = 49] = "Wisconsin";
+        State_id[State_id["Wyoming"] = 50] = "Wyoming";
+    })(State_id || (State_id = {}));
+    function build_year_to_indicators_map(json_data) {
+        var year_to_indicators = {};
+        for (var _i = 0, json_data_1 = json_data; _i < json_data_1.length; _i++) {
+            var o = json_data_1[_i];
+            var curYear = +o.year;
+            year_to_indicators[curYear] = [];
+            for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
+                var d = _b[_a];
+                var state_indicators = {
+                    state: d.state,
+                    population: d.population,
+                    total_came: d.total_came,
+                    total_left: d.total_left,
+                    net_immigration_flow: d.net_immigration_flow,
+                    GDP_per_capita: d.GDP_per_capita,
+                    GDP_percent_change: d.GDP_percent_change,
+                    jobs: d.jobs,
+                    jobs_per_capita: d.jobs_per_capita,
+                    personal_income_per_capita: d.personal_income_per_capita,
+                    personal_disposable_income_per_capita: d.personal_disposable_income_per_capita,
+                    personal_taxes_per_capita: d.personal_taxes_per_capita,
+                };
+                year_to_indicators[curYear].push(state_indicators);
+            }
+        }
+        return year_to_indicators;
+    }
 
     var Table = /** @class */ (function () {
         /**
@@ -313,6 +397,143 @@
         return HeatMap;
     }());
 
+    var Scatterplot = /** @class */ (function () {
+        function Scatterplot(state_data, container, svgDims, startYear) {
+            if (startYear === void 0) { startYear = 2017; }
+            this.curYear = startYear;
+            this.year_to_indicators = state_data;
+            this.cur_year_data = this.year_to_indicators[this.curYear];
+            this.container = container;
+            this.dropdownWrapper = container.append('div');
+            this.svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
+            this.axesGroup = this.svg.append('g');
+            this.circleGroup = this.svg.append('g');
+            this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
+            this.activeX = 'jobs_per_capita';
+            this.activeY = 'net_immigration_flow';
+            this.svgDims = svgDims;
+            this.padding = 100;
+            this.transition_time = 800;
+            this.create_dropdowns();
+            this.create_scales();
+            this.update_plot();
+        }
+        Scatterplot.indicator_to_name = function (indicator) {
+            var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
+            return no_underscores[0].toUpperCase() + no_underscores.slice(1);
+        };
+        Scatterplot.prototype.create_dropdowns = function () {
+            var _this = this;
+            var yWrap = this.dropdownWrapper.append('div').classed('dropdown-panel', true);
+            yWrap.append('div').classed('y-label', true)
+                .append('text')
+                .text('Y Axis Data');
+            yWrap.append('div').attr('id', 'dropdown_y').classed('dropdown', true).append('div').classed('dropdown-content', true)
+                .append('select');
+            var xWrap = this.dropdownWrapper.append('div').classed('dropdown-panel', true);
+            xWrap.append('div').classed('x-label', true)
+                .append('text')
+                .text('X Axis Data');
+            xWrap.append('div').attr('id', 'dropdown_x').classed('dropdown', true).append('div').classed('dropdown-content', true)
+                .append('select');
+            var that = this;
+            /* X DROPDOWN */
+            var dropX = this.dropdownWrapper.select('#dropdown_x').select('.dropdown-content').select('select');
+            var optionsX = dropX.selectAll('option').data(this.indicators).join('option');
+            optionsX
+                .append('option')
+                .attr('value', function (d) { return d; });
+            optionsX
+                .append('text')
+                .text(function (d) { return Scatterplot.indicator_to_name(d); });
+            optionsX.filter(function (indicator) { return indicator === _this.activeX; })
+                .attr('selected', true);
+            dropX.on('change', function (d, i) {
+                var this_select = this;
+                that.activeX = that.indicators[this_select.selectedIndex];
+                that.update_plot();
+            });
+            /* Y DROPDOWN */
+            var dropY = this.dropdownWrapper.select('#dropdown_y').select('.dropdown-content').select('select');
+            var optionsY = dropY.selectAll('option').data(this.indicators).join('option');
+            optionsY
+                .append('option')
+                .attr('value', function (indicator) { return indicator; });
+            optionsY
+                .append('text')
+                .text(function (d) { return Scatterplot.indicator_to_name(d); });
+            optionsY.filter(function (indicator) { return indicator === _this.activeY; })
+                .attr('selected', true);
+            dropY.on('change', function (d, i) {
+                var this_select = this;
+                that.activeY = that.indicators[this_select.selectedIndex];
+                that.update_plot();
+            });
+        };
+        Scatterplot.prototype.create_scales = function () {
+            this.axesGroup.append('g')
+                .attr('id', 'x-axis');
+            this.axesGroup.append('g')
+                .attr('id', 'y-axis');
+            this.axesGroup
+                .append('text')
+                .classed('x-label', true);
+            this.axesGroup
+                .append('text')
+                .classed('y-label', true);
+        };
+        Scatterplot.prototype.update_scales = function () {
+            var _this = this;
+            var padding = this.padding;
+            var svgDims = this.svgDims;
+            var label_padding = 50;
+            var xDomain = [d3.min(this.cur_year_data, function (d) { return d[_this.activeX]; }),
+                d3.max(this.cur_year_data, function (d) { return d[_this.activeX]; })];
+            var yDomain = [d3.min(this.cur_year_data, function (d) { return d[_this.activeY]; }),
+                d3.max(this.cur_year_data, function (d) { return d[_this.activeY]; })];
+            var xScale = d3.scaleLinear()
+                .domain(xDomain)
+                .range([padding, svgDims.width - padding]);
+            var yScale = d3.scaleLinear()
+                .domain(yDomain)
+                .range([svgDims.height - padding, padding]);
+            this.axesGroup.select('#x-axis')
+                .attr('transform', "translate (0," + yScale.range()[0] + ")")
+                .transition()
+                .call(d3.axisBottom(xScale))
+                .duration(this.transition_time);
+            this.axesGroup.select('#y-axis')
+                .attr('transform', "translate (" + padding + ",0)")
+                .transition()
+                .call(d3.axisLeft(yScale))
+                .duration(this.transition_time);
+            this.axesGroup.select('.x-label')
+                .style('text-anchor', 'middle')
+                .attr('transform', "translate(" + (xScale.range()[0] + (xScale.range()[1] - xScale.range()[0]) / 2.0) + ", " + (svgDims.height - label_padding) + ")")
+                .text(Scatterplot.indicator_to_name(this.activeX));
+            this.axesGroup.select('.y-label')
+                .style('text-anchor', 'middle')
+                .attr('transform', "translate(" + label_padding + ", " + (yScale.range()[0] + (yScale.range()[1] - yScale.range()[0]) / 2.0) + ") rotate(-90)")
+                .text(Scatterplot.indicator_to_name(this.activeY));
+            this.xScale = xScale;
+            this.yScale = yScale;
+        };
+        Scatterplot.prototype.update_plot = function () {
+            var _this = this;
+            this.update_scales();
+            this.circleGroup
+                .selectAll('circle')
+                .data(this.cur_year_data.filter(function (d) { return typeof (d[_this.activeX]) !== 'undefined' && typeof (d[_this.activeY]) !== 'undefined'; }))
+                .join('circle')
+                .transition()
+                .attr('r', 5)
+                .attr('cx', function (d) { return _this.xScale(d[_this.activeX]); })
+                .attr('cy', function (d) { return _this.yScale(d[_this.activeY]); })
+                .duration(this.transition_time);
+        };
+        return Scatterplot;
+    }());
+
     String.prototype.clean = function () {
         return this.replace(/\s/g, "_");
     };
@@ -326,16 +547,22 @@
         height: 650,
         width: 1000
     };
+    var scatterSelection = d3.select('.scatterplot');
+    var scatterDims = {
+        height: 700,
+        width: 700
+    };
     // TODO Chord Diagram Integration
     // const chordSelection = d3.select('.chord');
     // const chordDims = {
     //     height: 500,
     //     width: 1000
     // };
-    d3.json('data/migration.json').then(function (data) {
+    d3.json('data/migration_and_economic_data.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
         var table = new Table(migrationPatterns, tableSelection, tableDims);
         var geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+        var scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
         // TODO Chord Diagram Integration
         // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     });

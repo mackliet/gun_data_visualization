@@ -55,7 +55,6 @@ export enum MigrationNodeId {
     'West Virginia',
     Wisconsin,
     Wyoming,
-    'Puerto Rico',
 }
 
 /**

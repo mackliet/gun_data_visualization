@@ -1,0 +1,11 @@
+.y-label,
+.x-label,
+.c-label 
+{
+    text-anchor: middle;
+}
+
+.dropdown 
+{
+    float: right;
+}

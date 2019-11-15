@@ -23,3 +23,6 @@ Transpile typescript
 tsc
 tsc -w
 ```
+
+Keys available for any given state record in a given year:
+['state', 'came_from', 'population', 'left_to', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita']
