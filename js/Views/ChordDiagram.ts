@@ -1,5 +1,6 @@
 import {IView} from "./IView";
-import {MigrationData, MigrationNodeId, MigrationPatterns} from "../Data/MigrationPatterns";
+import {MigrationData, MigrationPatterns} from "../Data/MigrationPatterns";
+import {RegionEnum} from "../Data/DataUtils"
 import {Selection} from "d3-selection";
 import {Dimensions} from "../Utils/svg-utils";
 
@@ -22,7 +23,7 @@ export class ChordDiagram implements IView {
 
     }
 
-    focusNode(migrationNode: MigrationNodeId) {
+    focusNode(migrationNode: RegionEnum) {
 
     }
 

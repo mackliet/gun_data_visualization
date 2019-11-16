@@ -1,4 +1,5 @@
-import {MigrationData, MigrationNode, MigrationNodeId, MigrationPatterns} from "../Data/MigrationPatterns";
+import {MigrationData, MigrationNode, MigrationPatterns} from "../Data/MigrationPatterns";
+import {RegionEnum} from "../Data/DataUtils"
 import {ScaleLinear} from 'd3';
 import {Selection} from 'd3-selection';
 import {Dimensions} from "../Utils/svg-utils";
@@ -76,7 +77,7 @@ export class Table implements IView {
     private region(rows: Selection<any, any, any, any>) {
         console.debug("entering region column creation method");
         rows.append('td').append('text').text((d) => {
-            return MigrationNodeId[d.nodeId];
+            return RegionEnum[d.nodeId];
         });
     }
 
@@ -94,7 +95,7 @@ export class Table implements IView {
             }
             return this.flowScale(0);
         }).attr('y', 0).attr('height', 5).attr('width', (d) => {
-            console.debug(`${MigrationNodeId[d.nodeId]}: ${d.netImmigrationFlow}, ${this.flowScale(d.netImmigrationFlow)}`);
+            console.debug(`${RegionEnum[d.nodeId]}: ${d.netImmigrationFlow}, ${this.flowScale(d.netImmigrationFlow)}`);
             const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
             return flow < 0 ? 0 : flow;
         }).attr('fill', (d) => {
@@ -113,7 +114,7 @@ export class Table implements IView {
             }
             return this.flowScale(0);
         }).attr('y', 5).attr('height', 5).attr('width', (d) => {
-            console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
+            console.debug(`${RegionEnum[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
             const width = this.flowScale(d.totalCame) - this.flowScale(0);
             return width;
         }).attr('fill', 'blue');
@@ -127,7 +128,7 @@ export class Table implements IView {
             }
             return this.flowScale(d.netImmigrationFlow);
         }).attr('y', 10).attr('height', 5).attr('width', (d) => {
-            console.debug(`${MigrationNodeId[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
+            console.debug(`${RegionEnum[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
             let width;
             if (d.netImmigrationFlow < 0) {
                 width = (this.flowScale(d.totalCame) - this.flowScale(0)) +

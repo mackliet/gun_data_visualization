@@ -4,7 +4,8 @@ import {Selection} from 'd3-selection';
 import * as topojson from 'topojson';
 import {Feature} from 'geojson';
 import {IView} from "./IView";
-import {MigrationData, MigrationNodeId, MigrationPatterns} from "../Data/MigrationPatterns";
+import {MigrationData, MigrationPatterns} from "../Data/MigrationPatterns";
+import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
 
 const borderId = (name: string) => {
@@ -48,7 +49,7 @@ export class HeatMap implements IView {
                 })
                 .on('mouseover', (d) => {
                     const name = d.properties.name;
-                    const nodeId = MigrationNodeId[name];
+                    const nodeId = RegionEnum[name];
                     console.debug(name);
                     const id = stateId(d.properties.name);
                     d3.select(`#${id}`).style('fill', 'darkgray');
@@ -74,14 +75,14 @@ export class HeatMap implements IView {
 
     }
 
-    focusNode(migrationNode: MigrationNodeId) {
+    focusNode(migrationNode: RegionEnum) {
 
     }
 
     stateFill(d) {
         console.log(d);
         const name = d.properties.name;
-        const nodeId = MigrationNodeId[name];
+        const nodeId = RegionEnum[name];
         const t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
         console.log(t, this.colorScale(t));
         return d3.interpolateRdBu(this.colorScale(t))
