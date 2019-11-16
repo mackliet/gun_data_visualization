@@ -85,7 +85,8 @@
                         totalPopulation: +d.population,
                         totalCame: d.total_came,
                         totalLeft: d.total_left,
-                        edges: new Map()
+                        edges: new Map(),
+                        maxEdgeTo: 0
                     };
                     /**
                      * Check totals get max values
@@ -117,6 +118,10 @@
                             moe: 0,
                             estimate: +edge.estimate
                         };
+                        // Calculate max migration number for that state for color scale determination
+                        if (+edge.estimate > node.maxEdgeTo) {
+                            node.maxEdgeTo = +edge.estimate;
+                        }
                     }
                     this.data[curYear].push(node);
                 }
@@ -163,7 +168,7 @@
     var Table = /** @class */ (function () {
         /**
          *
-         * @param data data to bind to the view
+         * @param migrationPatterns
          * @param container HTML selection where the view will be placed in
          * @param svgDims dimensions of the SVG
          * @param startYear year to start the visualization
@@ -201,7 +206,6 @@
             var rows = this.tBody.selectAll('tr').data(this.currentData[year]).enter().append('tr');
             for (var _i = 0, _a = this.headerLabels; _i < _a.length; _i++) {
                 var header = _a[_i];
-                console.debug("calling " + header.clean() + " method");
                 this[header.toLocaleLowerCase().clean()](rows);
             }
         };
@@ -209,14 +213,12 @@
             console.debug("Clicked " + l + " header");
         };
         Table.prototype.region = function (rows) {
-            console.debug("entering region column creation method");
             rows.append('td').append('text').text(function (d) {
                 return RegionEnum[d.nodeId];
             });
         };
         Table.prototype.total_flow = function (rows) {
             var _this = this;
-            console.debug("entering inflow column creation method");
             var tds = rows.append('td');
             tds.attr('class', 'svg'); //.append('div').attr('max-height', 20);
             var svg = tds.append('svg').attr('width', this.RECT_WIDTH).style('max-height', '100%')
@@ -230,7 +232,6 @@
                 }
                 return _this.flowScale(0);
             }).attr('y', 0).attr('height', 5).attr('width', function (d) {
-                console.debug(RegionEnum[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
                 var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
                 return flow < 0 ? 0 : flow;
             }).attr('fill', function (d) {
@@ -250,7 +251,6 @@
                 }
                 return _this.flowScale(0);
             }).attr('y', 5).attr('height', 5).attr('width', function (d) {
-                console.debug(RegionEnum[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
                 var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
                 return width;
             }).attr('fill', 'blue');
@@ -263,7 +263,6 @@
                 }
                 return _this.flowScale(d.netImmigrationFlow);
             }).attr('y', 10).attr('height', 5).attr('width', function (d) {
-                console.debug(RegionEnum[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
                 var width;
                 if (d.netImmigrationFlow < 0) {
                     width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
@@ -278,6 +277,12 @@
         return Table;
     }());
 
+    var State;
+    (function (State) {
+        State["to"] = "to";
+        State["from"] = "from";
+        State["net"] = "net";
+    })(State || (State = {}));
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
         return "state" + name;
@@ -286,57 +291,109 @@
         function HeatMap(patterns, container, svgDims, startYear) {
             var _this = this;
             if (startYear === void 0) { startYear = 2017; }
+            this.state = State.net;
             this.curYear = startYear;
             this.currentData = patterns.data;
-            this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
-            var path = d3.geoPath();
-            var svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
-            /**
-             * Adapted from https://bl.ocks.org/mbostock/4090848
-             */
+            this.svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
+            this.path = d3.geoPath();
+            this.setColorScale();
             d3.json("https://d3js.org/us-10m.v2.json").then(function (us) {
-                console.debug("Display US Map");
-                console.debug(_this.currentData[_this.curYear]);
-                // States
-                //@ts-ignore
-                svg.append('g').selectAll('path').data(topojson.feature(us, us.objects.states).features).enter()
-                    .append('path').attr('d', path).attr("class", "states")
-                    .attr('id', function (d) {
-                    return stateId(d.properties.name);
-                })
-                    .style('fill', function (d) {
-                    return _this.stateFill(d);
-                })
-                    .on('mouseover', function (d) {
-                    var name = d.properties.name;
-                    var nodeId = RegionEnum[name];
-                    console.debug(name);
-                    var id = stateId(d.properties.name);
-                    d3.select("#" + id).style('fill', 'darkgray');
-                }).on('mouseout', function (d) {
-                    var id = stateId(d.properties.name);
-                    d3.select("#" + id).style('fill', _this.stateFill(d));
-                });
+                _this.us = us;
+                /**
+                 * Adapted from https://bl.ocks.org/mbostock/4090848
+                 */
+                _this.dataSelection = _this.svg.append('g').selectAll('path')
+                    //@ts-ignore
+                    .data(topojson.feature(_this.us, _this.us.objects.states).features);
+                _this.drawMap(null);
                 // Borders
-                //@ts-ignore
-                svg.append("path")
+                _this.svg.append("path")
                     .attr("class", "state-borders")
-                    .attr("d", path(topojson.mesh(us, us.objects.states, function (a, b) { return a !== b; })));
+                    .attr("d", _this.path(topojson.mesh(us, us.objects.states, function (a, b) {
+                    return a !== b;
+                })));
             });
         }
-        HeatMap.prototype.initMap = function () {
+        HeatMap.prototype.drawMap = function (stateSelected) {
+            var _this = this;
+            this.currentRegion = stateSelected;
+            // TODO Needs better logic than this, but there is no selector so later
+            if (stateSelected !== null) {
+                this.state = State.to;
+                this.setColorScale();
+            }
+            else {
+                this.state = State.net;
+                this.setColorScale();
+            }
+            console.debug("Display US Map");
+            console.debug(this.currentData[this.curYear]);
+            // States
+            var enter = this.dataSelection.enter()
+                .append('path').attr('d', this.path).attr("class", "states")
+                .attr('id', function (d) {
+                return stateId(d.properties.name);
+            })
+                .style('fill', function (d) {
+                return _this.stateFill(d, stateSelected);
+            })
+                .on('mouseover', function (d) {
+                var name = d.properties.name;
+                var nodeId = RegionEnum[name];
+                var id = stateId(d.properties.name);
+                d3.select("#" + id).style('fill', 'darkgray');
+            }).on('mouseout', function (d) {
+                var id = stateId(d.properties.name);
+                d3.select("#" + id).style('fill', _this.stateFill(d, stateSelected));
+            }).on('click', function (d) { return _this.focusNode(d); });
+            this.dataSelection.merge(enter).attr('fill', function (d) {
+                return _this.stateFill(d, stateSelected);
+            });
         };
-        HeatMap.prototype.showFullMap = function () {
+        HeatMap.prototype.focusNode = function (feature) {
+            console.log("Changing the state selection context " + feature.properties.name);
+            console.log("Collecting edges for state node ID " + RegionEnum[feature.properties.name] + "...");
+            //@ts-ignore
+            this.drawMap(RegionEnum[feature.properties.name]);
         };
-        HeatMap.prototype.focusNode = function (migrationNode) {
-        };
-        HeatMap.prototype.stateFill = function (d) {
-            console.log(d);
+        HeatMap.prototype.stateFill = function (d, stateSelection) {
             var name = d.properties.name;
             var nodeId = RegionEnum[name];
-            var t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
-            console.log(t, this.colorScale(t));
-            return d3.interpolateRdBu(this.colorScale(t));
+            var flowData;
+            if (stateSelection === null) {
+                flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+            }
+            else {
+                if (this.currentData[this.curYear][nodeId].edges.hasOwnProperty(stateSelection)) {
+                    flowData = this.currentData[this.curYear][nodeId].edges[stateSelection].estimate;
+                }
+                else {
+                    return 'darkgray';
+                }
+                if (flowData === undefined) {
+                    throw new Error("Was not able to find a suitable edge from node " + d.properties.name + " to " + RegionEnum[stateSelection]);
+                }
+            }
+            // Need to add third case of migration from
+            switch (this.state) {
+                case State.to:
+                    return d3.interpolateBlues(this.colorScale(flowData));
+                default:
+                    return d3.interpolateRdBu(this.colorScale(flowData));
+            }
+        };
+        HeatMap.prototype.setColorScale = function () {
+            switch (this.state) {
+                case State.to:
+                    var maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                    this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
+                    break;
+                case State.from:
+                    this.colorScale = d3.scaleLinear().domain([0, 1e5]).range([0, 1]);
+                    break;
+                default:
+                    this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
+            }
         };
         return HeatMap;
     }());
