@@ -412,7 +412,7 @@
             this.activeX = 'jobs_per_capita';
             this.activeY = 'net_immigration_flow';
             this.svgDims = svgDims;
-            this.padding = 100;
+            this.padding = 110;
             this.transition_time = 800;
             this.create_dropdowns();
             this.create_scales();
@@ -500,12 +500,12 @@
             this.axesGroup.select('#x-axis')
                 .attr('transform', "translate (0," + yScale.range()[0] + ")")
                 .transition()
-                .call(d3.axisBottom(xScale))
+                .call(d3.axisBottom(xScale).ticks(6))
                 .duration(this.transition_time);
             this.axesGroup.select('#y-axis')
                 .attr('transform', "translate (" + padding + ",0)")
                 .transition()
-                .call(d3.axisLeft(yScale))
+                .call(d3.axisLeft(yScale).ticks(6))
                 .duration(this.transition_time);
             this.axesGroup.select('.x-label')
                 .style('text-anchor', 'middle')

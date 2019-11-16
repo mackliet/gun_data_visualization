@@ -39,7 +39,7 @@ export class Scatterplot implements IView
         this.activeX = 'jobs_per_capita';
         this.activeY = 'net_immigration_flow';
         this.svgDims = svgDims;
-        this.padding = 100;
+        this.padding = 110;
         this.transition_time = 800;
         
         this.create_dropdowns();
@@ -160,13 +160,13 @@ export class Scatterplot implements IView
         this.axesGroup.select('#x-axis')
         .attr('transform', `translate (0,${yScale.range()[0]})`)
         .transition()
-        .call(d3.axisBottom(xScale) as any)
+        .call(d3.axisBottom(xScale).ticks(6) as any)
         .duration(this.transition_time);
 
         this.axesGroup.select('#y-axis')
         .attr('transform', `translate (${padding},0)`)
         .transition()
-        .call(d3.axisLeft(yScale) as any)
+        .call(d3.axisLeft(yScale).ticks(6) as any)
         .duration(this.transition_time);
 
         this.axesGroup.select('.x-label')
