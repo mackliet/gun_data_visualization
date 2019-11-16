@@ -465,15 +465,73 @@
         Scatterplot.prototype.update_plot = function () {
             var _this = this;
             this.update_scales();
+            var that = this;
             this.circleGroup
                 .selectAll('circle')
                 .data(this.cur_year_data.filter(function (d) { return typeof (d[_this.activeX]) !== 'undefined' && typeof (d[_this.activeY]) !== 'undefined'; }))
                 .join('circle')
+                .attr('fill', 'steelblue')
+                .on('mouseover', function (d) {
+                console.log("MOUSEOVER");
+                var circle = d3.select(this);
+                circle.classed('hovered', true);
+                var is_float = function (num) { return num % 1 !== 0; };
+                var x_val = d[that.activeX];
+                var y_val = d[that.activeY];
+                var lines = ["" + d.state,
+                    Scatterplot.indicator_to_name(that.activeX) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
+                    Scatterplot.indicator_to_name(that.activeY) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
+                var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+                var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+                Scatterplot.create_tooltip(that.svg, x, y, lines);
+            })
+                .on('mouseout', function (d) {
+                d3.select(this).classed('hovered', false);
+                that.svg.selectAll('.tooltip-group').remove();
+            })
                 .transition()
                 .attr('r', 5)
                 .attr('cx', function (d) { return _this.xScale(d[_this.activeX]); })
                 .attr('cy', function (d) { return _this.yScale(d[_this.activeY]); })
                 .duration(this.transition_time);
+        };
+        Scatterplot.create_tooltip = function (svg, x, y, text_lines) {
+            var tooltip = svg
+                .append('g')
+                .classed('tooltip-group', true);
+            var tooltip_rect = tooltip
+                .append('rect')
+                .classed('custom_tooltip', true)
+                .attr('rx', 10)
+                .attr('ry', 10);
+            var tooltip_text = tooltip
+                .append('text')
+                .classed('custom_tooltip', true);
+            for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
+                var line = text_lines_1[_i];
+                var tspan = tooltip_text
+                    .append('tspan')
+                    .classed('custom_tooltip', true)
+                    .attr('x', 0)
+                    .attr('y', tooltip_text.node().getBBox().height)
+                    .text(line);
+            }
+            tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 20);
+            tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 20);
+            tooltip_text
+                .selectAll('tspan')
+                .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
+                .attr('y', function () {
+                var current_y = parseFloat(d3.select(this).attr('y'));
+                var rect_height = parseFloat(tooltip_rect.attr('height'));
+                return current_y + rect_height / text_lines.length;
+            });
+            var svg_width = parseFloat(svg.attr('width'));
+            var tooltip_width = parseFloat(tooltip_rect.attr('width'));
+            var tooltip_x = x + tooltip_width > svg_width
+                ? svg_width - tooltip_width - 20
+                : x;
+            tooltip.attr('transform', "translate (" + tooltip_x + " " + y + ")");
         };
         return Scatterplot;
     }());
