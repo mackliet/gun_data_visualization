@@ -9,3 +9,13 @@
 {
     float: right;
 }
+
+circle 
+{
+    stroke: black;
+}
+
+circle.hovered
+{
+    stroke-width: 3px;
+}

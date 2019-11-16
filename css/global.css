@@ -20,3 +20,25 @@
     align-items: center;
     justify-content: center;
 }
+
+rect.custom_tooltip
+{
+    opacity: 0.8;
+    fill: rgb(226, 226, 226);
+}
+
+text.custom_tooltip
+{
+    text-anchor: middle;
+    display: block;
+    white-space: nowrap;
+    fill: black;
+}
+
+tspan.custom_tooltip
+{
+    text-anchor: middle;
+    display: block;
+    white-space: nowrap;
+    fill: black;
+}
