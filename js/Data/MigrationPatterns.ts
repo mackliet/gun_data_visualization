@@ -1,76 +1,19 @@
 import {Year} from "./ImportData";
-
-/**
- * Enumerator representing all 50 States, and other migration regions
- */
-export enum MigrationNodeId {
-    Alabama,
-    Alaska,
-    Arizona,
-    Arkansas,
-    California,
-    Colorado,
-    Connecticut,
-    Delaware,
-    'District of Columbia',
-    Florida,
-    Georgia,
-    Hawaii,
-    Idaho,
-    Illinois,
-    Indiana,
-    Iowa,
-    Kansas,
-    Kentucky,
-    Louisiana,
-    Maine,
-    Maryland,
-    Massachusetts,
-    Michigan,
-    Minnesota,
-    Mississippi,
-    Missouri,
-    Montana,
-    Nebraska,
-    Nevada,
-    'New Hampshire',
-    'New Jersey',
-    'New Mexico',
-    'New York',
-    'North Carolina',
-    'North Dakota',
-    Ohio,
-    Oklahoma,
-    Oregon,
-    Pennsylvania,
-    'Rhode Island',
-    'South Carolina',
-    'South Dakota',
-    Tennessee,
-    Texas,
-    Utah,
-    Vermont,
-    Virginia ,
-    Washington,
-    'West Virginia',
-    Wisconsin,
-    Wyoming,
-}
-
+import {RegionEnum} from "./DataUtils"
 /**
  * An edge that represents migration from one state to another
  */
 export interface MigrationEdge {
         estimate: number;
         moe: number;
-        fromMigrationRegion: MigrationNodeId
-        toMigrationRegion: MigrationNodeId;
+        fromMigrationRegion: RegionEnum
+        toMigrationRegion: RegionEnum;
 }
 
 export interface MigrationNode {
     year: number
-    nodeId: MigrationNodeId;
-    edges: Map<MigrationNodeId, MigrationEdge>;
+    nodeId: RegionEnum;
+    edges: Map<RegionEnum, MigrationEdge>;
     netImmigrationFlow: number;
     totalPopulation: number;
     totalCame: number;
@@ -105,15 +48,15 @@ export class MigrationPatterns {
             const curYear = +o.year;
             this.data[curYear] = [];
             for (const d of o.data){
-                const id = MigrationNodeId[d.state.trim()];
+                const id = RegionEnum[d.state.trim()];
                 const node: MigrationNode = {
                     year: curYear,
-                    nodeId: MigrationNodeId[d.state.trim()],
+                    nodeId: RegionEnum[d.state.trim()],
                     netImmigrationFlow: d.net_immigration_flow,
                     totalPopulation: +d.population,
                     totalCame: d.total_came,
                     totalLeft: d.total_left,
-                    edges: new Map<MigrationNodeId, MigrationEdge>()
+                    edges: new Map<RegionEnum, MigrationEdge>()
                 };
 
                 /**
@@ -139,7 +82,7 @@ export class MigrationPatterns {
                 }
 
                 for (const edge of d.left_to){
-                    const toNodeId = MigrationNodeId[edge.state.trim()];
+                    const toNodeId = RegionEnum[edge.state.trim()];
                     node.edges[toNodeId] = {
                         fromMigrationRegion: id,
                         toMigrationRegion: toNodeId,

@@ -1,7 +1,8 @@
 import * as d3 from "d3";
 import {Selection} from 'd3-selection';
 import {IView} from "./IView";
-import {Year_to_indicators_map, State_indicators, State_id} from "../Data/State_indicators"
+import {Year_to_indicators_map, State_indicators} from "../Data/State_indicators"
+import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
 
 

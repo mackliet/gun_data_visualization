@@ -1,4 +1,4 @@
-import {MigrationNodeId} from "../js/Data/MigrationPatterns";
+import {RegionEnum} from "../js/Data/DataUtils"
 import {MigrationPatterns} from "../js/Data/MigrationPatterns";
 const fs = require('fs');
 

@@ -2,62 +2,63 @@
     'use strict';
 
     /**
-     * Enumerator representing all 50 States, and other migration regions
+     * Enumerator representing all 50 States
      */
-    var MigrationNodeId;
-    (function (MigrationNodeId) {
-        MigrationNodeId[MigrationNodeId["Alabama"] = 0] = "Alabama";
-        MigrationNodeId[MigrationNodeId["Alaska"] = 1] = "Alaska";
-        MigrationNodeId[MigrationNodeId["Arizona"] = 2] = "Arizona";
-        MigrationNodeId[MigrationNodeId["Arkansas"] = 3] = "Arkansas";
-        MigrationNodeId[MigrationNodeId["California"] = 4] = "California";
-        MigrationNodeId[MigrationNodeId["Colorado"] = 5] = "Colorado";
-        MigrationNodeId[MigrationNodeId["Connecticut"] = 6] = "Connecticut";
-        MigrationNodeId[MigrationNodeId["Delaware"] = 7] = "Delaware";
-        MigrationNodeId[MigrationNodeId["District of Columbia"] = 8] = "District of Columbia";
-        MigrationNodeId[MigrationNodeId["Florida"] = 9] = "Florida";
-        MigrationNodeId[MigrationNodeId["Georgia"] = 10] = "Georgia";
-        MigrationNodeId[MigrationNodeId["Hawaii"] = 11] = "Hawaii";
-        MigrationNodeId[MigrationNodeId["Idaho"] = 12] = "Idaho";
-        MigrationNodeId[MigrationNodeId["Illinois"] = 13] = "Illinois";
-        MigrationNodeId[MigrationNodeId["Indiana"] = 14] = "Indiana";
-        MigrationNodeId[MigrationNodeId["Iowa"] = 15] = "Iowa";
-        MigrationNodeId[MigrationNodeId["Kansas"] = 16] = "Kansas";
-        MigrationNodeId[MigrationNodeId["Kentucky"] = 17] = "Kentucky";
-        MigrationNodeId[MigrationNodeId["Louisiana"] = 18] = "Louisiana";
-        MigrationNodeId[MigrationNodeId["Maine"] = 19] = "Maine";
-        MigrationNodeId[MigrationNodeId["Maryland"] = 20] = "Maryland";
-        MigrationNodeId[MigrationNodeId["Massachusetts"] = 21] = "Massachusetts";
-        MigrationNodeId[MigrationNodeId["Michigan"] = 22] = "Michigan";
-        MigrationNodeId[MigrationNodeId["Minnesota"] = 23] = "Minnesota";
-        MigrationNodeId[MigrationNodeId["Mississippi"] = 24] = "Mississippi";
-        MigrationNodeId[MigrationNodeId["Missouri"] = 25] = "Missouri";
-        MigrationNodeId[MigrationNodeId["Montana"] = 26] = "Montana";
-        MigrationNodeId[MigrationNodeId["Nebraska"] = 27] = "Nebraska";
-        MigrationNodeId[MigrationNodeId["Nevada"] = 28] = "Nevada";
-        MigrationNodeId[MigrationNodeId["New Hampshire"] = 29] = "New Hampshire";
-        MigrationNodeId[MigrationNodeId["New Jersey"] = 30] = "New Jersey";
-        MigrationNodeId[MigrationNodeId["New Mexico"] = 31] = "New Mexico";
-        MigrationNodeId[MigrationNodeId["New York"] = 32] = "New York";
-        MigrationNodeId[MigrationNodeId["North Carolina"] = 33] = "North Carolina";
-        MigrationNodeId[MigrationNodeId["North Dakota"] = 34] = "North Dakota";
-        MigrationNodeId[MigrationNodeId["Ohio"] = 35] = "Ohio";
-        MigrationNodeId[MigrationNodeId["Oklahoma"] = 36] = "Oklahoma";
-        MigrationNodeId[MigrationNodeId["Oregon"] = 37] = "Oregon";
-        MigrationNodeId[MigrationNodeId["Pennsylvania"] = 38] = "Pennsylvania";
-        MigrationNodeId[MigrationNodeId["Rhode Island"] = 39] = "Rhode Island";
-        MigrationNodeId[MigrationNodeId["South Carolina"] = 40] = "South Carolina";
-        MigrationNodeId[MigrationNodeId["South Dakota"] = 41] = "South Dakota";
-        MigrationNodeId[MigrationNodeId["Tennessee"] = 42] = "Tennessee";
-        MigrationNodeId[MigrationNodeId["Texas"] = 43] = "Texas";
-        MigrationNodeId[MigrationNodeId["Utah"] = 44] = "Utah";
-        MigrationNodeId[MigrationNodeId["Vermont"] = 45] = "Vermont";
-        MigrationNodeId[MigrationNodeId["Virginia"] = 46] = "Virginia";
-        MigrationNodeId[MigrationNodeId["Washington"] = 47] = "Washington";
-        MigrationNodeId[MigrationNodeId["West Virginia"] = 48] = "West Virginia";
-        MigrationNodeId[MigrationNodeId["Wisconsin"] = 49] = "Wisconsin";
-        MigrationNodeId[MigrationNodeId["Wyoming"] = 50] = "Wyoming";
-    })(MigrationNodeId || (MigrationNodeId = {}));
+    var RegionEnum;
+    (function (RegionEnum) {
+        RegionEnum[RegionEnum["Alabama"] = 0] = "Alabama";
+        RegionEnum[RegionEnum["Alaska"] = 1] = "Alaska";
+        RegionEnum[RegionEnum["Arizona"] = 2] = "Arizona";
+        RegionEnum[RegionEnum["Arkansas"] = 3] = "Arkansas";
+        RegionEnum[RegionEnum["California"] = 4] = "California";
+        RegionEnum[RegionEnum["Colorado"] = 5] = "Colorado";
+        RegionEnum[RegionEnum["Connecticut"] = 6] = "Connecticut";
+        RegionEnum[RegionEnum["Delaware"] = 7] = "Delaware";
+        RegionEnum[RegionEnum["District of Columbia"] = 8] = "District of Columbia";
+        RegionEnum[RegionEnum["Florida"] = 9] = "Florida";
+        RegionEnum[RegionEnum["Georgia"] = 10] = "Georgia";
+        RegionEnum[RegionEnum["Hawaii"] = 11] = "Hawaii";
+        RegionEnum[RegionEnum["Idaho"] = 12] = "Idaho";
+        RegionEnum[RegionEnum["Illinois"] = 13] = "Illinois";
+        RegionEnum[RegionEnum["Indiana"] = 14] = "Indiana";
+        RegionEnum[RegionEnum["Iowa"] = 15] = "Iowa";
+        RegionEnum[RegionEnum["Kansas"] = 16] = "Kansas";
+        RegionEnum[RegionEnum["Kentucky"] = 17] = "Kentucky";
+        RegionEnum[RegionEnum["Louisiana"] = 18] = "Louisiana";
+        RegionEnum[RegionEnum["Maine"] = 19] = "Maine";
+        RegionEnum[RegionEnum["Maryland"] = 20] = "Maryland";
+        RegionEnum[RegionEnum["Massachusetts"] = 21] = "Massachusetts";
+        RegionEnum[RegionEnum["Michigan"] = 22] = "Michigan";
+        RegionEnum[RegionEnum["Minnesota"] = 23] = "Minnesota";
+        RegionEnum[RegionEnum["Mississippi"] = 24] = "Mississippi";
+        RegionEnum[RegionEnum["Missouri"] = 25] = "Missouri";
+        RegionEnum[RegionEnum["Montana"] = 26] = "Montana";
+        RegionEnum[RegionEnum["Nebraska"] = 27] = "Nebraska";
+        RegionEnum[RegionEnum["Nevada"] = 28] = "Nevada";
+        RegionEnum[RegionEnum["New Hampshire"] = 29] = "New Hampshire";
+        RegionEnum[RegionEnum["New Jersey"] = 30] = "New Jersey";
+        RegionEnum[RegionEnum["New Mexico"] = 31] = "New Mexico";
+        RegionEnum[RegionEnum["New York"] = 32] = "New York";
+        RegionEnum[RegionEnum["North Carolina"] = 33] = "North Carolina";
+        RegionEnum[RegionEnum["North Dakota"] = 34] = "North Dakota";
+        RegionEnum[RegionEnum["Ohio"] = 35] = "Ohio";
+        RegionEnum[RegionEnum["Oklahoma"] = 36] = "Oklahoma";
+        RegionEnum[RegionEnum["Oregon"] = 37] = "Oregon";
+        RegionEnum[RegionEnum["Pennsylvania"] = 38] = "Pennsylvania";
+        RegionEnum[RegionEnum["Rhode Island"] = 39] = "Rhode Island";
+        RegionEnum[RegionEnum["South Carolina"] = 40] = "South Carolina";
+        RegionEnum[RegionEnum["South Dakota"] = 41] = "South Dakota";
+        RegionEnum[RegionEnum["Tennessee"] = 42] = "Tennessee";
+        RegionEnum[RegionEnum["Texas"] = 43] = "Texas";
+        RegionEnum[RegionEnum["Utah"] = 44] = "Utah";
+        RegionEnum[RegionEnum["Vermont"] = 45] = "Vermont";
+        RegionEnum[RegionEnum["Virginia"] = 46] = "Virginia";
+        RegionEnum[RegionEnum["Washington"] = 47] = "Washington";
+        RegionEnum[RegionEnum["West Virginia"] = 48] = "West Virginia";
+        RegionEnum[RegionEnum["Wisconsin"] = 49] = "Wisconsin";
+        RegionEnum[RegionEnum["Wyoming"] = 50] = "Wyoming";
+    })(RegionEnum || (RegionEnum = {}));
+
     /**
      * Data structure that contains all the state migration data, immutable
      */
@@ -76,10 +77,10 @@
                 this.data[curYear] = [];
                 for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
                     var d = _b[_a];
-                    var id = MigrationNodeId[d.state.trim()];
+                    var id = RegionEnum[d.state.trim()];
                     var node = {
                         year: curYear,
-                        nodeId: MigrationNodeId[d.state.trim()],
+                        nodeId: RegionEnum[d.state.trim()],
                         netImmigrationFlow: d.net_immigration_flow,
                         totalPopulation: +d.population,
                         totalCame: d.total_came,
@@ -109,7 +110,7 @@
                     }
                     for (var _c = 0, _d = d.left_to; _c < _d.length; _c++) {
                         var edge = _d[_c];
-                        var toNodeId = MigrationNodeId[edge.state.trim()];
+                        var toNodeId = RegionEnum[edge.state.trim()];
                         node.edges[toNodeId] = {
                             fromMigrationRegion: id,
                             toMigrationRegion: toNodeId,
@@ -131,63 +132,6 @@
         return MigrationPatterns;
     }());
 
-    /**
-     * Enumerator representing all 50 States and DC
-     */
-    var State_id;
-    (function (State_id) {
-        State_id[State_id["Alabama"] = 0] = "Alabama";
-        State_id[State_id["Alaska"] = 1] = "Alaska";
-        State_id[State_id["Arizona"] = 2] = "Arizona";
-        State_id[State_id["Arkansas"] = 3] = "Arkansas";
-        State_id[State_id["California"] = 4] = "California";
-        State_id[State_id["Colorado"] = 5] = "Colorado";
-        State_id[State_id["Connecticut"] = 6] = "Connecticut";
-        State_id[State_id["Delaware"] = 7] = "Delaware";
-        State_id[State_id["District of Columbia"] = 8] = "District of Columbia";
-        State_id[State_id["Florida"] = 9] = "Florida";
-        State_id[State_id["Georgia"] = 10] = "Georgia";
-        State_id[State_id["Hawaii"] = 11] = "Hawaii";
-        State_id[State_id["Idaho"] = 12] = "Idaho";
-        State_id[State_id["Illinois"] = 13] = "Illinois";
-        State_id[State_id["Indiana"] = 14] = "Indiana";
-        State_id[State_id["Iowa"] = 15] = "Iowa";
-        State_id[State_id["Kansas"] = 16] = "Kansas";
-        State_id[State_id["Kentucky"] = 17] = "Kentucky";
-        State_id[State_id["Louisiana"] = 18] = "Louisiana";
-        State_id[State_id["Maine"] = 19] = "Maine";
-        State_id[State_id["Maryland"] = 20] = "Maryland";
-        State_id[State_id["Massachusetts"] = 21] = "Massachusetts";
-        State_id[State_id["Michigan"] = 22] = "Michigan";
-        State_id[State_id["Minnesota"] = 23] = "Minnesota";
-        State_id[State_id["Mississippi"] = 24] = "Mississippi";
-        State_id[State_id["Missouri"] = 25] = "Missouri";
-        State_id[State_id["Montana"] = 26] = "Montana";
-        State_id[State_id["Nebraska"] = 27] = "Nebraska";
-        State_id[State_id["Nevada"] = 28] = "Nevada";
-        State_id[State_id["New Hampshire"] = 29] = "New Hampshire";
-        State_id[State_id["New Jersey"] = 30] = "New Jersey";
-        State_id[State_id["New Mexico"] = 31] = "New Mexico";
-        State_id[State_id["New York"] = 32] = "New York";
-        State_id[State_id["North Carolina"] = 33] = "North Carolina";
-        State_id[State_id["North Dakota"] = 34] = "North Dakota";
-        State_id[State_id["Ohio"] = 35] = "Ohio";
-        State_id[State_id["Oklahoma"] = 36] = "Oklahoma";
-        State_id[State_id["Oregon"] = 37] = "Oregon";
-        State_id[State_id["Pennsylvania"] = 38] = "Pennsylvania";
-        State_id[State_id["Rhode Island"] = 39] = "Rhode Island";
-        State_id[State_id["South Carolina"] = 40] = "South Carolina";
-        State_id[State_id["South Dakota"] = 41] = "South Dakota";
-        State_id[State_id["Tennessee"] = 42] = "Tennessee";
-        State_id[State_id["Texas"] = 43] = "Texas";
-        State_id[State_id["Utah"] = 44] = "Utah";
-        State_id[State_id["Vermont"] = 45] = "Vermont";
-        State_id[State_id["Virginia"] = 46] = "Virginia";
-        State_id[State_id["Washington"] = 47] = "Washington";
-        State_id[State_id["West Virginia"] = 48] = "West Virginia";
-        State_id[State_id["Wisconsin"] = 49] = "Wisconsin";
-        State_id[State_id["Wyoming"] = 50] = "Wyoming";
-    })(State_id || (State_id = {}));
     function build_year_to_indicators_map(json_data) {
         var year_to_indicators = {};
         for (var _i = 0, json_data_1 = json_data; _i < json_data_1.length; _i++) {
@@ -267,7 +211,7 @@
         Table.prototype.region = function (rows) {
             console.debug("entering region column creation method");
             rows.append('td').append('text').text(function (d) {
-                return MigrationNodeId[d.nodeId];
+                return RegionEnum[d.nodeId];
             });
         };
         Table.prototype.total_flow = function (rows) {
@@ -286,7 +230,7 @@
                 }
                 return _this.flowScale(0);
             }).attr('y', 0).attr('height', 5).attr('width', function (d) {
-                console.debug(MigrationNodeId[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
+                console.debug(RegionEnum[d.nodeId] + ": " + d.netImmigrationFlow + ", " + _this.flowScale(d.netImmigrationFlow));
                 var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
                 return flow < 0 ? 0 : flow;
             }).attr('fill', function (d) {
@@ -306,7 +250,7 @@
                 }
                 return _this.flowScale(0);
             }).attr('y', 5).attr('height', 5).attr('width', function (d) {
-                console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
+                console.debug(RegionEnum[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
                 var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
                 return width;
             }).attr('fill', 'blue');
@@ -319,7 +263,7 @@
                 }
                 return _this.flowScale(d.netImmigrationFlow);
             }).attr('y', 10).attr('height', 5).attr('width', function (d) {
-                console.debug(MigrationNodeId[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
+                console.debug(RegionEnum[d.nodeId] + ": " + d.totalCame + ", " + _this.flowScale(d.totalCame));
                 var width;
                 if (d.netImmigrationFlow < 0) {
                     width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
@@ -365,7 +309,7 @@
                 })
                     .on('mouseover', function (d) {
                     var name = d.properties.name;
-                    var nodeId = MigrationNodeId[name];
+                    var nodeId = RegionEnum[name];
                     console.debug(name);
                     var id = stateId(d.properties.name);
                     d3.select("#" + id).style('fill', 'darkgray');
@@ -389,7 +333,7 @@
         HeatMap.prototype.stateFill = function (d) {
             console.log(d);
             var name = d.properties.name;
-            var nodeId = MigrationNodeId[name];
+            var nodeId = RegionEnum[name];
             var t = this.currentData[this.curYear][nodeId].netImmigrationFlow;
             console.log(t, this.colorScale(t));
             return d3.interpolateRdBu(this.colorScale(t));
