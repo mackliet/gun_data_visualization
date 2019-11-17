@@ -37,3 +37,11 @@ path.states:hover {
     height: 40px;
     width: 100%;
 }
+
+#geoLegend {
+    z-index: 10;
+}
+
+.geoLegendContainer {
+    float: right;
+}

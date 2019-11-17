@@ -9,6 +9,7 @@
     <script src="https://d3js.org/d3-color.v1.min.js"></script>
     <script src="https://d3js.org/d3-selection.v1.min.js"></script>
     <script src="https://d3js.org/d3-transition.v1.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <script src="https://unpkg.com/topojson@3"></script>
     <!-- Links -->
     <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,700&display=swap" rel="stylesheet">
@@ -38,9 +39,11 @@
                         <a class="dropdown-item" href="#">Migration Out</a>
                     </div>
                 </div>
-                <text class="region-select"></text>
+                <div class="geoLegendContainer">
+                </div>
             </div>
-            <div class="geoHeat"></div>
+            <div class="geoHeat">
+            </div>
         </div>
         <div class="view chord"></div>
         <div class="view scatterplot"></div>
