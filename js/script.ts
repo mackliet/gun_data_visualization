@@ -2,9 +2,10 @@ import * as d3 from 'd3';
 import {MigrationPatterns} from "./Data/MigrationPatterns";
 import {Year_to_indicators_map, build_year_to_indicators_map} from "./Data/State_indicators";
 import {Table} from "./Views/Table";
-import {HeatMap, ViewState} from "./Views/HeatMap";
+import {HeatMap} from "./Views/HeatMap";
 import {ChordDiagram} from "./Views/ChordDiagram";
 import {Scatterplot} from "./Views/Scatterplot";
+import {ViewState} from "./Views/ViewUtils";
 
 // TODO Move this global stuff in some super utility class that is executed before everything else
 declare global {
@@ -53,6 +54,6 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
 });
 
 // Bind migration statistic to event listeners on the migration statistic dropdown
-d3.selectAll('.dropdown-item').data([State.net, State.in, State.out]).on('click', (d) => {
+d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', (d) => {
     geo.toggleMigrationStatistic(d);
 });

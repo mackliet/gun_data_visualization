@@ -26,6 +26,7 @@ export class HeatMap implements IView {
     private currentRegion: RegionEnum;
     private dataSelection;
     private us;
+    private g: Selection<any, any, any, any>;
 
     constructor(patterns: MigrationPatterns, container: Selection<any, any, any, any>,
                 svgDims: Dimensions, startYear: number = 2017) {
@@ -40,9 +41,7 @@ export class HeatMap implements IView {
             /**
              * Adapted from https://bl.ocks.org/mbostock/4090848
              */
-            this.dataSelection = this.svg.append('g').selectAll('path')
-            //@ts-ignore
-                .data<Feature>(topojson.feature(this.us,  this.us.objects.states ).features);
+            this.g = this.svg.append('g');
             this.drawMap(null);
             // Borders
             this.svg.append("path")
@@ -58,6 +57,9 @@ export class HeatMap implements IView {
         this.currentRegion = stateSelected;
         this.setColorScale();
         // States
+        this.dataSelection = this.g.selectAll('path')
+        //@ts-ignore
+            .data<Feature>(topojson.feature(this.us,  this.us.objects.states ).features);
         const enter = this.dataSelection.enter()
             .append('path').attr('d', this.path).attr("class", "states")
             .attr('id', (d) => {
@@ -73,12 +75,14 @@ export class HeatMap implements IView {
                 d3.select(`#${id}`).style('fill', 'darkgray');
             }).on('mouseout', (d) => {
             const id = stateId(d.properties.name);
-            d3.select(`#${id}`).style('fill', this.stateFill(d, stateSelected));
+            d3.select(`#${id}`).style('fill', this.stateFill(d, this.currentRegion));
         }).on('click', (d) => this.focusNode(d));
 
-        this.dataSelection.merge(enter).attr('fill', (d) => {
+        this.dataSelection.merge(enter).style('fill', (d) => {
             return this.stateFill(d, stateSelected)
         });
+
+        this.dataSelection.exit(enter).remove();
 
     }
 
@@ -94,6 +98,7 @@ export class HeatMap implements IView {
     }
 
     stateFill(d: Feature, stateSelection: RegionEnum) {
+        console.log('Changing State Fill');
         const name = d.properties.name;
         const nodeId = RegionEnum[name];
         let flowData: number;
@@ -187,9 +192,9 @@ export class HeatMap implements IView {
         }
     }
 
-    public toggleMigrationStatistic(state: ViewState) {
-        this.state = state;
-        // TODO calculate net for each region
+    public toggleMigrationStatistic(viewState: ViewState) {
+        console.log(`Toggle View State: ${viewState}`)
+        this.state = viewState;
         this.drawMap(this.currentRegion);
     }
 }
