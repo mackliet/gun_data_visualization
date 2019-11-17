@@ -34,7 +34,7 @@ export class Table implements IView {
 
     /**
      *
-     * @param data data to bind to the view
+     * @param migrationPatterns
      * @param container HTML selection where the view will be placed in
      * @param svgDims dimensions of the SVG
      * @param startYear year to start the visualization
@@ -65,7 +65,6 @@ export class Table implements IView {
         console.debug('Loading data table');
         const rows = this.tBody.selectAll('tr').data<MigrationNode>(this.currentData[year]).enter().append('tr');
         for (const header of this.headerLabels) {
-            console.debug(`calling ${header.clean()} method`);
             this[header.toLocaleLowerCase().clean()](rows)
         }
     }
@@ -75,15 +74,13 @@ export class Table implements IView {
     }
 
     private region(rows: Selection<any, any, any, any>) {
-        console.debug("entering region column creation method");
         rows.append('td').append('text').text((d) => {
             return RegionEnum[d.nodeId];
         });
     }
 
     private total_flow(rows: Selection<any, any, any, any>) {
-        console.debug("entering inflow column creation method");
-        const tds = rows.append('td'); tds.attr('class','svg')//.append('div').attr('max-height', 20);
+        const tds = rows.append('td'); tds.attr('class','svg');//.append('div').attr('max-height', 20);
         const svg = tds.append('svg').attr('width', this.RECT_WIDTH).style('max-height', '100%')
             .style('display', 'block');
         /**
@@ -95,7 +92,6 @@ export class Table implements IView {
             }
             return this.flowScale(0);
         }).attr('y', 0).attr('height', 5).attr('width', (d) => {
-            console.debug(`${RegionEnum[d.nodeId]}: ${d.netImmigrationFlow}, ${this.flowScale(d.netImmigrationFlow)}`);
             const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
             return flow < 0 ? 0 : flow;
         }).attr('fill', (d) => {
@@ -114,7 +110,6 @@ export class Table implements IView {
             }
             return this.flowScale(0);
         }).attr('y', 5).attr('height', 5).attr('width', (d) => {
-            console.debug(`${RegionEnum[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
             const width = this.flowScale(d.totalCame) - this.flowScale(0);
             return width;
         }).attr('fill', 'blue');
@@ -128,7 +123,6 @@ export class Table implements IView {
             }
             return this.flowScale(d.netImmigrationFlow);
         }).attr('y', 10).attr('height', 5).attr('width', (d) => {
-            console.debug(`${RegionEnum[d.nodeId]}: ${d.totalCame}, ${this.flowScale(d.totalCame)}`);
             let width;
             if (d.netImmigrationFlow < 0) {
                 width = (this.flowScale(d.totalCame) - this.flowScale(0)) +

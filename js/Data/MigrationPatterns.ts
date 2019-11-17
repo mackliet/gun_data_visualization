@@ -18,6 +18,7 @@ export interface MigrationNode {
     totalPopulation: number;
     totalCame: number;
     totalLeft: number;
+    maxEdgeTo: number;
 }
 
 /**
@@ -56,7 +57,8 @@ export class MigrationPatterns {
                     totalPopulation: +d.population,
                     totalCame: d.total_came,
                     totalLeft: d.total_left,
-                    edges: new Map<RegionEnum, MigrationEdge>()
+                    edges: new Map<RegionEnum, MigrationEdge>(),
+                    maxEdgeTo: 0
                 };
 
                 /**
@@ -89,6 +91,10 @@ export class MigrationPatterns {
                         moe: 0, // TODO Get MOE
                         estimate: +edge.estimate
                     };
+                    // Calculate max migration number for that state for color scale determination
+                    if (+edge.estimate > node.maxEdgeTo) {
+                        node.maxEdgeTo = +edge.estimate;
+                    }
                 }
                 this.data[curYear].push(node);
             }
