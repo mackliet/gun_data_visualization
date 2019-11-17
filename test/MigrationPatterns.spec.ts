@@ -42,7 +42,7 @@ describe('Test Migration Patterns Class Construct', () => {
                 expect(migrationPatterns.data[year][regionEnumMap]).toHaveProperty('edges');
                 for (const regionEnumMapEdge of Array.from(Array(totalNumberOfRegions).keys())) {
                     if (regionEnumMapEdge !== regionEnumMap ) {
-                        expect(migrationPatterns.data[year][regionEnumMap].edges)
+                        expect(migrationPatterns.data[year][regionEnumMap].toEdges)
                             .toHaveProperty(regionEnumMapEdge.toString());
                     }
                 }

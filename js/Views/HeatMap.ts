@@ -9,9 +9,9 @@ import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
 
 export enum State {
-    to = 'to',
-    from = 'from',
-    net = 'net'
+    net = 'net',
+    out = 'out',
+    in = 'in'
 }
 
 const borderId = (name: string) => {
@@ -27,6 +27,7 @@ const stateId = (name: string) => {
 export class HeatMap implements IView {
 
     readonly curYear: number;
+    readonly migrationPatterns: MigrationPatterns;
     readonly currentData: MigrationData;
     readonly svg: Selection<any, any, any, any>;
     private readonly path;
@@ -39,6 +40,7 @@ export class HeatMap implements IView {
     constructor(patterns: MigrationPatterns, container: Selection<any, any, any, any>,
                 svgDims: Dimensions, startYear: number = 2017) {
         this.curYear = startYear;
+        this.migrationPatterns = patterns;
         this.currentData = patterns.data;
         this.svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
         this.path = d3.geoPath();
@@ -63,15 +65,10 @@ export class HeatMap implements IView {
     }
 
     drawMap(stateSelected: RegionEnum) {
+        console.log(this.currentRegion, this.state)
         this.currentRegion = stateSelected;
         // TODO Needs better logic than this, but there is no selector so later
-        if (stateSelected !== null) {
-            this.state = State.to;
-            this.setColorScale();
-        } else {
-            this.state = State.net;
-            this.setColorScale();
-        }
+        this.setColorScale();
         console.debug("Display US Map");
         console.debug(this.currentData[this.curYear]);
         // States
@@ -103,6 +100,7 @@ export class HeatMap implements IView {
     focusNode(feature: Feature) {
         console.log(`Changing the state selection context ${feature.properties.name}`);
         console.log(`Collecting edges for state node ID ${RegionEnum[feature.properties.name]}...`);
+        d3.select('.region-select').attr('text', feature.properties.name);
         //@ts-ignore
         this.drawMap(RegionEnum[feature.properties.name])
     }
@@ -112,13 +110,42 @@ export class HeatMap implements IView {
         const nodeId = RegionEnum[name];
         let flowData: number;
         if (stateSelection === null) {
-            flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+            switch (this.state) {
+                case State.out:
+                    flowData = this.currentData[this.curYear][nodeId].totalLeft;
+                    break;
+                case State.in:
+                    flowData = this.currentData[this.curYear][nodeId].totalCame;
+                    break;
+                default:
+                    flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+            }
+
         } else {
-                if (this.currentData[this.curYear][nodeId].edges.hasOwnProperty(stateSelection)) {
-                    flowData = this.currentData[this.curYear][nodeId].edges[stateSelection].estimate;
-                } else {
-                    return 'darkgray';
-                }
+            switch (this.state) {
+                case State.out:
+                    if (this.currentData[this.curYear][nodeId].toEdges.hasOwnProperty(stateSelection)) {
+                        flowData = this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate;
+                    } else {
+                        return 'darkgray';
+                    }
+                    break;
+                case State.in:
+                    if (this.currentData[this.curYear][nodeId].fromEdges.hasOwnProperty(stateSelection)) {
+                        flowData = this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate;
+                    } else {
+                        return 'darkgray';
+                    }
+                    break;
+                default:
+                    if (this.currentData[this.curYear][nodeId].toEdges.hasOwnProperty(stateSelection)) {
+                        flowData = this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate -
+                            this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate;
+                    } else {
+                        return 'darkgray';
+                    }
+            }
+
             if (flowData === undefined) {
 
                 throw new Error(`Was not able to find a suitable edge from node ${d.properties.name} to ${RegionEnum[stateSelection]}`)
@@ -126,8 +153,10 @@ export class HeatMap implements IView {
         }
         // Need to add third case of migration from
         switch(this.state) {
-            case State.to:
+            case State.out:
                 return d3.interpolateBlues(this.colorScale(flowData));
+            case State.in:
+                return d3.interpolateReds(this.colorScale(flowData));
             default:
                 return d3.interpolateRdBu(this.colorScale(flowData))
         }
@@ -136,17 +165,45 @@ export class HeatMap implements IView {
 
     setColorScale() {
         switch(this.state) {
-            case State.to:
-                const maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+            case State.out:
+                var maxValue;
+                if (this.currentRegion != null) {
+                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                } else {
+                    maxValue = this.migrationPatterns.maxOutflow
+                }
+                console.log(`Max: ${maxValue}`);
                 this.colorScale = d3.scaleLinear().domain([0,maxValue]).range([0,1]);
                 break;
-            case State.from:
-                this.colorScale = d3.scaleLinear().domain([0,1e5]).range([0,1]);
+            case State.in:
+                var maxValue;
+                console.log(this.currentRegion);
+                if (this.currentRegion != null) {
+                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
+                } else {
+                    maxValue = this.migrationPatterns.maxInflow
+                }
+                console.log(`Max: ${maxValue}`);
+                this.colorScale = d3.scaleLinear().domain([0,maxValue]).range([0,1]);
                 break;
             default:
-                this.colorScale = d3.scaleLinear().domain([-1e5,1e5]).range([0,1]);
+                var maxValue;
+                console.log(this.currentRegion);
+                if (this.currentRegion != null) {
+                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
+                    const minValue = this.currentData[this.curYear][this.currentRegion].minEdgeNet;
+                    this.colorScale = d3.scaleLinear().domain([-maxValue,maxValue]).range([0,1]);
+                } else {
+                    this.colorScale = d3.scaleLinear().domain([-1e5,1e5]).range([0,1]);
+                }
 
         }
+    }
+
+    public toggleMigrationStatistic(state: State) {
+        this.state = state;
+        // TODO calculate net for each region
+        this.drawMap(this.currentRegion);
     }
 
 

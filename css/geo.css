@@ -2,7 +2,17 @@
 Adapted from https://bl.ocks.org/mbostock/4090848
  */
 .states {
-    fill: lightblue;
+    fill: saddlebrown;
+}
+
+.geoState {
+    height: 400px;
+    width: 200px;
+    float: left;
+}
+
+.geoHeat {
+    float: left;
 }
 
 path.states:hover {
@@ -16,4 +26,14 @@ path.states:hover {
     stroke-linejoin: round;
     stroke-linecap: round;
     pointer-events: none;
+}
+
+.switch-toggle {
+    float: left;
+}
+
+.region-select {
+    float: left;
+    height: 40px;
+    width: 100%;
 }
