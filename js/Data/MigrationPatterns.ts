@@ -116,11 +116,8 @@ export class MigrationPatterns {
                     if (+edge.estimate > node.maxEdgeFrom) {
                         node.maxEdgeFrom = +edge.estimate;
                     }
-                    if ((+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
-                        node.maxEdgeNet = +edge.estimate - node.toEdges[fromNodeId].estimate;
-                    }
-                    if ((+edge.estimate - node.toEdges[fromNodeId].estimate) < node.minEdgeNet) {
-                        node.minEdgeNet = +edge.estimate - node.toEdges[fromNodeId].estimate;
+                    if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
+                        node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                     }
                 }
                 this.data[curYear].push(node);

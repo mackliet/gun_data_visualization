@@ -7,17 +7,7 @@ import {IView} from "./IView";
 import {MigrationData, MigrationPatterns} from "../Data/MigrationPatterns";
 import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
-
-export enum State {
-    net = 'net',
-    out = 'out',
-    in = 'in'
-}
-
-const borderId = (name: string) => {
-    name = name.replace(/\s/g, "");
-    return `border${name}`;
-};
+import {ViewState} from "./ViewUtils";
 
 const stateId = (name: string) => {
     name = name.replace(/\s/g, "");
@@ -32,7 +22,7 @@ export class HeatMap implements IView {
     readonly svg: Selection<any, any, any, any>;
     private readonly path;
     private colorScale: ScaleLinear<number, number>;
-    private state: State = State.net;
+    private state: ViewState = ViewState.net;
     private currentRegion: RegionEnum;
     private dataSelection;
     private us;
@@ -65,14 +55,9 @@ export class HeatMap implements IView {
     }
 
     drawMap(stateSelected: RegionEnum) {
-        console.log(this.currentRegion, this.state)
         this.currentRegion = stateSelected;
-        // TODO Needs better logic than this, but there is no selector so later
         this.setColorScale();
-        console.debug("Display US Map");
-        console.debug(this.currentData[this.curYear]);
         // States
-
         const enter = this.dataSelection.enter()
             .append('path').attr('d', this.path).attr("class", "states")
             .attr('id', (d) => {
@@ -98,11 +83,14 @@ export class HeatMap implements IView {
     }
 
     focusNode(feature: Feature) {
-        console.log(`Changing the state selection context ${feature.properties.name}`);
-        console.log(`Collecting edges for state node ID ${RegionEnum[feature.properties.name]}...`);
+        let region = RegionEnum[feature.properties.name];
+        //@ts-ignore
+        if (region === this.currentRegion) {
+            region = null;
+        }
         d3.select('.region-select').attr('text', feature.properties.name);
         //@ts-ignore
-        this.drawMap(RegionEnum[feature.properties.name])
+        this.drawMap(region);
     }
 
     stateFill(d: Feature, stateSelection: RegionEnum) {
@@ -111,10 +99,10 @@ export class HeatMap implements IView {
         let flowData: number;
         if (stateSelection === null) {
             switch (this.state) {
-                case State.out:
+                case ViewState.out:
                     flowData = this.currentData[this.curYear][nodeId].totalLeft;
                     break;
-                case State.in:
+                case ViewState.in:
                     flowData = this.currentData[this.curYear][nodeId].totalCame;
                     break;
                 default:
@@ -123,14 +111,14 @@ export class HeatMap implements IView {
 
         } else {
             switch (this.state) {
-                case State.out:
+                case ViewState.out:
                     if (this.currentData[this.curYear][nodeId].toEdges.hasOwnProperty(stateSelection)) {
                         flowData = this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate;
                     } else {
                         return 'darkgray';
                     }
                     break;
-                case State.in:
+                case ViewState.in:
                     if (this.currentData[this.curYear][nodeId].fromEdges.hasOwnProperty(stateSelection)) {
                         flowData = this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate;
                     } else {
@@ -151,11 +139,13 @@ export class HeatMap implements IView {
                 throw new Error(`Was not able to find a suitable edge from node ${d.properties.name} to ${RegionEnum[stateSelection]}`)
             }
         }
-        // Need to add third case of migration from
+
         switch(this.state) {
-            case State.out:
+            case ViewState.out:
+                if (this.currentRegion == null) return d3.interpolateReds(this.colorScale(flowData));
                 return d3.interpolateBlues(this.colorScale(flowData));
-            case State.in:
+            case ViewState.in:
+                if (this.currentRegion == null) return d3.interpolateBlues(this.colorScale(flowData));
                 return d3.interpolateReds(this.colorScale(flowData));
             default:
                 return d3.interpolateRdBu(this.colorScale(flowData))
@@ -164,9 +154,9 @@ export class HeatMap implements IView {
     }
 
     setColorScale() {
+        let maxValue;
         switch(this.state) {
-            case State.out:
-                var maxValue;
+            case ViewState.out:
                 if (this.currentRegion != null) {
                     maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
                 } else {
@@ -175,8 +165,7 @@ export class HeatMap implements IView {
                 console.log(`Max: ${maxValue}`);
                 this.colorScale = d3.scaleLinear().domain([0,maxValue]).range([0,1]);
                 break;
-            case State.in:
-                var maxValue;
+            case ViewState.in:
                 console.log(this.currentRegion);
                 if (this.currentRegion != null) {
                     maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
@@ -187,11 +176,9 @@ export class HeatMap implements IView {
                 this.colorScale = d3.scaleLinear().domain([0,maxValue]).range([0,1]);
                 break;
             default:
-                var maxValue;
                 console.log(this.currentRegion);
                 if (this.currentRegion != null) {
                     maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
-                    const minValue = this.currentData[this.curYear][this.currentRegion].minEdgeNet;
                     this.colorScale = d3.scaleLinear().domain([-maxValue,maxValue]).range([0,1]);
                 } else {
                     this.colorScale = d3.scaleLinear().domain([-1e5,1e5]).range([0,1]);
@@ -200,13 +187,9 @@ export class HeatMap implements IView {
         }
     }
 
-    public toggleMigrationStatistic(state: State) {
+    public toggleMigrationStatistic(state: ViewState) {
         this.state = state;
         // TODO calculate net for each region
         this.drawMap(this.currentRegion);
     }
-
-
-
-
 }

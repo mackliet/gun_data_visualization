@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import {MigrationPatterns} from "./Data/MigrationPatterns";
 import {Year_to_indicators_map, build_year_to_indicators_map} from "./Data/State_indicators";
 import {Table} from "./Views/Table";
-import {HeatMap, State} from "./Views/HeatMap";
+import {HeatMap, ViewState} from "./Views/HeatMap";
 import {ChordDiagram} from "./Views/ChordDiagram";
 import {Scatterplot} from "./Views/Scatterplot";
 

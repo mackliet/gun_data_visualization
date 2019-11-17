@@ -140,11 +140,8 @@
                         if (+edge.estimate > node.maxEdgeFrom) {
                             node.maxEdgeFrom = +edge.estimate;
                         }
-                        if ((+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
-                            node.maxEdgeNet = +edge.estimate - node.toEdges[fromNodeId].estimate;
-                        }
-                        if ((+edge.estimate - node.toEdges[fromNodeId].estimate) < node.minEdgeNet) {
-                            node.minEdgeNet = +edge.estimate - node.toEdges[fromNodeId].estimate;
+                        if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
+                            node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                         }
                     }
                     this.data[curYear].push(node);
@@ -370,11 +367,14 @@
             });
         };
         HeatMap.prototype.focusNode = function (feature) {
-            console.log("Changing the state selection context " + feature.properties.name);
-            console.log("Collecting edges for state node ID " + RegionEnum[feature.properties.name] + "...");
+            var region = RegionEnum[feature.properties.name];
+            //@ts-ignore
+            if (region === this.currentRegion) {
+                region = null;
+            }
             d3.select('.region-select').attr('text', feature.properties.name);
             //@ts-ignore
-            this.drawMap(RegionEnum[feature.properties.name]);
+            this.drawMap(region);
         };
         HeatMap.prototype.stateFill = function (d, stateSelection) {
             var name = d.properties.name;
@@ -426,17 +426,21 @@
             // Need to add third case of migration from
             switch (this.state) {
                 case State.out:
+                    if (this.currentRegion == null)
+                        return d3.interpolateReds(this.colorScale(flowData));
                     return d3.interpolateBlues(this.colorScale(flowData));
                 case State.in:
+                    if (this.currentRegion == null)
+                        return d3.interpolateBlues(this.colorScale(flowData));
                     return d3.interpolateReds(this.colorScale(flowData));
                 default:
                     return d3.interpolateRdBu(this.colorScale(flowData));
             }
         };
         HeatMap.prototype.setColorScale = function () {
+            var maxValue;
             switch (this.state) {
                 case State.out:
-                    var maxValue;
                     if (this.currentRegion != null) {
                         maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
                     }
@@ -447,7 +451,6 @@
                     this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
                     break;
                 case State.in:
-                    var maxValue;
                     console.log(this.currentRegion);
                     if (this.currentRegion != null) {
                         maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
@@ -459,11 +462,9 @@
                     this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
                     break;
                 default:
-                    var maxValue;
                     console.log(this.currentRegion);
                     if (this.currentRegion != null) {
                         maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
-                        var minValue = this.currentData[this.curYear][this.currentRegion].minEdgeNet;
                         this.colorScale = d3.scaleLinear().domain([-maxValue, maxValue]).range([0, 1]);
                     }
                     else {
