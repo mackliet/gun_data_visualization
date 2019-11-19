@@ -19,6 +19,9 @@ export interface MigrationNode {
     totalPopulation: number;
     totalCame: number;
     totalLeft: number;
+}
+
+export interface StateRange {
     maxEdgeTo: number;
     maxEdgeFrom: number;
     minEdgeNet: number;
@@ -39,7 +42,8 @@ export class MigrationPatterns {
 
     // TODO review this data structure, may not be optimal
     public readonly data: MigrationData;
-
+    public readonly stateRanges: { [key: number]: StateRange };
+    public readonly years: number[];
     public readonly minSum: number = Number.MAX_VALUE;
     public readonly maxSum: number = 0;
     public readonly minInflow: number = Number.MAX_VALUE;
@@ -49,11 +53,22 @@ export class MigrationPatterns {
 
     constructor(data: Array<Year>){
         this.data = {};
+        this.years = [];
         for (const o of data) {
             const curYear = +o.year;
+            this.years.push(curYear);
             this.data[curYear] = [];
-            for (const d of o.data){
+            this.stateRanges = {};
+            for (const d of o.data) {
                 const id = RegionEnum[d.state.trim()];
+                if (!this.stateRanges.hasOwnProperty(id)){
+                    this.stateRanges[id] = {
+                        maxEdgeTo: -Number.MAX_VALUE,
+                        maxEdgeFrom: -Number.MAX_VALUE,
+                        minEdgeNet: Number.MAX_VALUE,
+                        maxEdgeNet: -Number.MAX_VALUE
+                    }
+                }
                 const node: MigrationNode = {
                     year: curYear,
                     nodeId: RegionEnum[d.state.trim()],
@@ -63,10 +78,6 @@ export class MigrationPatterns {
                     totalLeft: d.total_left,
                     toEdges: new Map<RegionEnum, MigrationEdge>(),
                     fromEdges: new Map<RegionEnum, MigrationEdge>(),
-                    maxEdgeTo: 0,
-                    maxEdgeFrom: 0,
-                    maxEdgeNet: -Number.MAX_VALUE,
-                    minEdgeNet: Number.MAX_VALUE
                 };
 
                 /**
@@ -100,8 +111,8 @@ export class MigrationPatterns {
                         estimate: +edge.estimate
                     };
                     // Calculate max migration number for that state for color scale determination
-                    if (+edge.estimate > node.maxEdgeTo) {
-                        node.maxEdgeTo = +edge.estimate;
+                    if (+edge.estimate > this.stateRanges[id].maxEdgeTo) {
+                        this.stateRanges[id].maxEdgeTo = +edge.estimate;
                     }
                 }
                 for (const edge of d.came_from){
@@ -113,29 +124,18 @@ export class MigrationPatterns {
                         estimate: +edge.estimate
                     };
                     // Calculate max migration number for that state for color scale determination
-                    if (+edge.estimate > node.maxEdgeFrom) {
-                        node.maxEdgeFrom = +edge.estimate;
+                    if (+edge.estimate > this.stateRanges[id].maxEdgeFrom) {
+                        this.stateRanges[id].maxEdgeFrom = +edge.estimate;
                     }
-                    if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
-                        node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
+                    if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > this.stateRanges[id].maxEdgeNet) {
+                        this.stateRanges[id].maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                     }
                 }
                 this.data[curYear].push(node);
             }
 
         }
-        console.info(this.data);
-        console.info(`Max values: \nMax Inflow: ${this.maxInflow}, Max Outflow: ${this.maxOutflow}, Max Total: ${this.maxSum}\n ` +
-                                `Min values: \nMin Inflow ${this.minInflow}, Min Outflow: ${this.minOutflow}, Min Total: ${this.minSum} `)
     }
-
-    yearsAsArray() {
-
-        Object.keys(this.data).map(key => {
-
-        });
-    }
-
 
 }
 

@@ -71,13 +71,24 @@
             this.minOutflow = Number.MAX_VALUE;
             this.maxOutflow = 0;
             this.data = {};
+            this.years = [];
             for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
                 var o = data_1[_i];
                 var curYear = +o.year;
+                this.years.push(curYear);
                 this.data[curYear] = [];
+                this.stateRanges = {};
                 for (var _a = 0, _b = o.data; _a < _b.length; _a++) {
                     var d = _b[_a];
                     var id = RegionEnum[d.state.trim()];
+                    if (!this.stateRanges.hasOwnProperty(id)) {
+                        this.stateRanges[id] = {
+                            maxEdgeTo: -Number.MAX_VALUE,
+                            maxEdgeFrom: -Number.MAX_VALUE,
+                            minEdgeNet: Number.MAX_VALUE,
+                            maxEdgeNet: -Number.MAX_VALUE
+                        };
+                    }
                     var node = {
                         year: curYear,
                         nodeId: RegionEnum[d.state.trim()],
@@ -87,10 +98,6 @@
                         totalLeft: d.total_left,
                         toEdges: new Map(),
                         fromEdges: new Map(),
-                        maxEdgeTo: 0,
-                        maxEdgeFrom: 0,
-                        maxEdgeNet: -Number.MAX_VALUE,
-                        minEdgeNet: Number.MAX_VALUE
                     };
                     /**
                      * Check totals get max values
@@ -123,8 +130,8 @@
                             estimate: +edge.estimate
                         };
                         // Calculate max migration number for that state for color scale determination
-                        if (+edge.estimate > node.maxEdgeTo) {
-                            node.maxEdgeTo = +edge.estimate;
+                        if (+edge.estimate > this.stateRanges[id].maxEdgeTo) {
+                            this.stateRanges[id].maxEdgeTo = +edge.estimate;
                         }
                     }
                     for (var _e = 0, _f = d.came_from; _e < _f.length; _e++) {
@@ -137,24 +144,17 @@
                             estimate: +edge.estimate
                         };
                         // Calculate max migration number for that state for color scale determination
-                        if (+edge.estimate > node.maxEdgeFrom) {
-                            node.maxEdgeFrom = +edge.estimate;
+                        if (+edge.estimate > this.stateRanges[id].maxEdgeFrom) {
+                            this.stateRanges[id].maxEdgeFrom = +edge.estimate;
                         }
-                        if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
-                            node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
+                        if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > this.stateRanges[id].maxEdgeNet) {
+                            this.stateRanges[id].maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                         }
                     }
                     this.data[curYear].push(node);
                 }
             }
-            console.info(this.data);
-            console.info("Max values: \nMax Inflow: " + this.maxInflow + ", Max Outflow: " + this.maxOutflow + ", Max Total: " + this.maxSum + "\n " +
-                ("Min values: \nMin Inflow " + this.minInflow + ", Min Outflow: " + this.minOutflow + ", Min Total: " + this.minSum + " "));
         }
-        MigrationPatterns.prototype.yearsAsArray = function () {
-            Object.keys(this.data).map(function (key) {
-            });
-        };
         return MigrationPatterns;
     }());
 
@@ -312,7 +312,7 @@
     var HeatMap = /** @class */ (function () {
         function HeatMap(patterns, container, svgDims, startYear) {
             var _this = this;
-            if (startYear === void 0) { startYear = 2017; }
+            if (startYear === void 0) { startYear = 2011; }
             this.state = ViewState.net;
             this.curYear = startYear;
             this.migrationPatterns = patterns;
@@ -363,7 +363,7 @@
                 var id = stateId(d.properties.name);
                 d3.select("#" + id).style('fill', _this.stateFill(d, _this.currentRegion));
             }).on('click', function (d) { return _this.focusNode(d); });
-            this.dataSelection.merge(enter).style('fill', function (d) {
+            this.dataSelection.merge(enter).transition().style('fill', function (d) {
                 return _this.stateFill(d, stateSelected);
             });
             this.dataSelection.exit(enter).remove();
@@ -447,7 +447,7 @@
             switch (this.state) {
                 case ViewState.out:
                     if (this.currentRegion != null) {
-                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                        maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeTo;
                     }
                     else {
                         maxValue = this.migrationPatterns.maxOutflow;
@@ -459,7 +459,7 @@
                 case ViewState.in:
                     console.log(this.currentRegion);
                     if (this.currentRegion != null) {
-                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
+                        maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeFrom;
                     }
                     else {
                         maxValue = this.migrationPatterns.maxInflow;
@@ -471,7 +471,7 @@
                 default:
                     console.log(this.currentRegion);
                     if (this.currentRegion != null) {
-                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
+                        maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeNet;
                         domain = [-maxValue, maxValue];
                         this.colorScale = d3.scaleLinear().domain([-maxValue, maxValue]).range([0, 1]);
                         this.legendScale = d3.scaleSequential(d3.interpolateRdBu).domain(domain);
@@ -487,6 +487,11 @@
         };
         HeatMap.prototype.toggleMigrationStatistic = function (viewState) {
             this.state = viewState;
+            this.drawMap(this.currentRegion);
+        };
+        HeatMap.prototype.changeYear = function (year) {
+            console.log("Year: " + year);
+            this.curYear = year;
             this.drawMap(this.currentRegion);
         };
         return HeatMap;
@@ -766,23 +771,32 @@
         height: 700,
         width: 700
     };
-    // TODO Chord Diagram Integration
-    // const chordSelection = d3.select('.chord');
-    // const chordDims = {
-    //     height: 500,
-    //     width: 1000
-    // };
+    var slider = document.getElementById("myRange");
+    //@ts-ignore
     var geo;
     var table;
     var scatter;
+    var migrationPatterns;
     d3.json('data/migration_and_economic_data.json').then(function (data) {
-        var migrationPatterns = new MigrationPatterns(data);
+        migrationPatterns = new MigrationPatterns(data);
         table = new Table(migrationPatterns, tableSelection, tableDims);
         geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
         scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
         // TODO Chord Diagram Integration
         // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     });
+    // Bind year event to various views
+    // TODO Bind to scatterplot and table
+    slider.oninput = function () {
+        //@ts-ignore
+        var minYear = Math.min.apply(Math, migrationPatterns.years);
+        var maxYear = Math.max.apply(Math, migrationPatterns.years);
+        var scale = d3.scaleLinear().domain([1, 100]).range([minYear, maxYear]);
+        //@ts-ignore
+        var curYear = Math.round(scale(this.value));
+        geo.changeYear(curYear);
+        console.log("Year: " + curYear);
+    };
     // Bind migration statistic to event listeners on the migration statistic dropdown
     d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', function (d) {
         geo.toggleMigrationStatistic(d);

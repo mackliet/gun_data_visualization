@@ -16,10 +16,10 @@ const stateId = (name: string) => {
 
 export class HeatMap implements IView {
 
-    readonly curYear: number;
     readonly migrationPatterns: MigrationPatterns;
     readonly currentData: MigrationData;
     readonly svg: Selection<any, any, any, any>;
+    public curYear: number;
     private readonly path;
     private readonly geoLegend: string;
     private colorScale: ScaleLinear<number, number>;
@@ -32,7 +32,7 @@ export class HeatMap implements IView {
 
 
     constructor(patterns: MigrationPatterns, container: Selection<any, any, any, any>,
-                svgDims: Dimensions, startYear: number = 2017) {
+                svgDims: Dimensions, startYear: number = 2011) {
         this.curYear = startYear;
         this.migrationPatterns = patterns;
         this.currentData = patterns.data;
@@ -84,7 +84,7 @@ export class HeatMap implements IView {
             d3.select(`#${id}`).style('fill', this.stateFill(d, this.currentRegion));
         }).on('click', (d) => this.focusNode(d));
 
-        this.dataSelection.merge(enter).style('fill', (d) => {
+        this.dataSelection.merge(enter).transition().style('fill', (d) => {
             return this.stateFill(d, stateSelected)
         });
 
@@ -173,7 +173,7 @@ export class HeatMap implements IView {
         switch(this.state) {
             case ViewState.out:
                 if (this.currentRegion != null) {
-                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                    maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeTo;
                 } else {
                     maxValue = this.migrationPatterns.maxOutflow
                 }
@@ -184,7 +184,7 @@ export class HeatMap implements IView {
             case ViewState.in:
                 console.log(this.currentRegion);
                 if (this.currentRegion != null) {
-                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
+                    maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeFrom;
                 } else {
                     maxValue = this.migrationPatterns.maxInflow
                 }
@@ -195,7 +195,7 @@ export class HeatMap implements IView {
             default:
                 console.log(this.currentRegion);
                 if (this.currentRegion != null) {
-                    maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
+                    maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeNet;
                     domain = [-maxValue,maxValue];
                     this.colorScale = d3.scaleLinear().domain([-maxValue,maxValue]).range([0,1]);
                     this.legendScale = d3.scaleSequential(d3.interpolateRdBu).domain(domain);
@@ -214,6 +214,12 @@ export class HeatMap implements IView {
 
     public toggleMigrationStatistic(viewState: ViewState) {
         this.state = viewState;
+        this.drawMap(this.currentRegion);
+    }
+
+    changeYear(year: number) {
+        console.log(`Year: ${year}`);
+        this.curYear = year;
         this.drawMap(this.currentRegion);
     }
 }
