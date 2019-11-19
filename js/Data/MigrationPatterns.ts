@@ -13,12 +13,16 @@ export interface MigrationEdge {
 export interface MigrationNode {
     year: number
     nodeId: RegionEnum;
-    edges: Map<RegionEnum, MigrationEdge>;
+    toEdges: Map<RegionEnum, MigrationEdge>;
+    fromEdges: Map<RegionEnum, MigrationEdge>;
     netImmigrationFlow: number;
     totalPopulation: number;
     totalCame: number;
     totalLeft: number;
     maxEdgeTo: number;
+    maxEdgeFrom: number;
+    minEdgeNet: number;
+    maxEdgeNet: number;
 }
 
 /**
@@ -57,8 +61,12 @@ export class MigrationPatterns {
                     totalPopulation: +d.population,
                     totalCame: d.total_came,
                     totalLeft: d.total_left,
-                    edges: new Map<RegionEnum, MigrationEdge>(),
-                    maxEdgeTo: 0
+                    toEdges: new Map<RegionEnum, MigrationEdge>(),
+                    fromEdges: new Map<RegionEnum, MigrationEdge>(),
+                    maxEdgeTo: 0,
+                    maxEdgeFrom: 0,
+                    maxEdgeNet: -Number.MAX_VALUE,
+                    minEdgeNet: Number.MAX_VALUE
                 };
 
                 /**
@@ -85,7 +93,7 @@ export class MigrationPatterns {
 
                 for (const edge of d.left_to){
                     const toNodeId = RegionEnum[edge.state.trim()];
-                    node.edges[toNodeId] = {
+                    node.toEdges[toNodeId] = {
                         fromMigrationRegion: id,
                         toMigrationRegion: toNodeId,
                         moe: 0, // TODO Get MOE
@@ -94,6 +102,22 @@ export class MigrationPatterns {
                     // Calculate max migration number for that state for color scale determination
                     if (+edge.estimate > node.maxEdgeTo) {
                         node.maxEdgeTo = +edge.estimate;
+                    }
+                }
+                for (const edge of d.came_from){
+                    const fromNodeId = RegionEnum[edge.state.trim()];
+                    node.fromEdges[fromNodeId] = {
+                        fromMigrationRegion: id,
+                        toMigrationRegion: fromNodeId,
+                        moe: 0, // TODO Get MOE
+                        estimate: +edge.estimate
+                    };
+                    // Calculate max migration number for that state for color scale determination
+                    if (+edge.estimate > node.maxEdgeFrom) {
+                        node.maxEdgeFrom = +edge.estimate;
+                    }
+                    if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
+                        node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                     }
                 }
                 this.data[curYear].push(node);

@@ -5,6 +5,7 @@ import {Table} from "./Views/Table";
 import {HeatMap} from "./Views/HeatMap";
 import {ChordDiagram} from "./Views/ChordDiagram";
 import {Scatterplot} from "./Views/Scatterplot";
+import {ViewState} from "./Views/ViewUtils";
 
 // TODO Move this global stuff in some super utility class that is executed before everything else
 declare global {
@@ -40,12 +41,19 @@ const scatterDims = {
 //     height: 500,
 //     width: 1000
 // };
-
+var geo: HeatMap;
+var table: Table;
+var scatter: Scatterplot;
 d3.json('data/migration_and_economic_data.json').then((data) => {
     const migrationPatterns = new MigrationPatterns(data);
-    const table = new Table(migrationPatterns, tableSelection, tableDims);
-    const geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-    const scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+    table = new Table(migrationPatterns, tableSelection, tableDims);
+    geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+    scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
     // TODO Chord Diagram Integration
     // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
+});
+
+// Bind migration statistic to event listeners on the migration statistic dropdown
+d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', (d) => {
+    geo.toggleMigrationStatistic(d);
 });

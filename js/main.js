@@ -85,8 +85,12 @@
                         totalPopulation: +d.population,
                         totalCame: d.total_came,
                         totalLeft: d.total_left,
-                        edges: new Map(),
-                        maxEdgeTo: 0
+                        toEdges: new Map(),
+                        fromEdges: new Map(),
+                        maxEdgeTo: 0,
+                        maxEdgeFrom: 0,
+                        maxEdgeNet: -Number.MAX_VALUE,
+                        minEdgeNet: Number.MAX_VALUE
                     };
                     /**
                      * Check totals get max values
@@ -112,7 +116,7 @@
                     for (var _c = 0, _d = d.left_to; _c < _d.length; _c++) {
                         var edge = _d[_c];
                         var toNodeId = RegionEnum[edge.state.trim()];
-                        node.edges[toNodeId] = {
+                        node.toEdges[toNodeId] = {
                             fromMigrationRegion: id,
                             toMigrationRegion: toNodeId,
                             moe: 0,
@@ -121,6 +125,23 @@
                         // Calculate max migration number for that state for color scale determination
                         if (+edge.estimate > node.maxEdgeTo) {
                             node.maxEdgeTo = +edge.estimate;
+                        }
+                    }
+                    for (var _e = 0, _f = d.came_from; _e < _f.length; _e++) {
+                        var edge = _f[_e];
+                        var fromNodeId = RegionEnum[edge.state.trim()];
+                        node.fromEdges[fromNodeId] = {
+                            fromMigrationRegion: id,
+                            toMigrationRegion: fromNodeId,
+                            moe: 0,
+                            estimate: +edge.estimate
+                        };
+                        // Calculate max migration number for that state for color scale determination
+                        if (+edge.estimate > node.maxEdgeFrom) {
+                            node.maxEdgeFrom = +edge.estimate;
+                        }
+                        if (Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate) > node.maxEdgeNet) {
+                            node.maxEdgeNet = Math.abs(+edge.estimate - node.toEdges[fromNodeId].estimate);
                         }
                     }
                     this.data[curYear].push(node);
@@ -277,12 +298,13 @@
         return Table;
     }());
 
-    var State;
-    (function (State) {
-        State["to"] = "to";
-        State["from"] = "from";
-        State["net"] = "net";
-    })(State || (State = {}));
+    var ViewState;
+    (function (ViewState) {
+        ViewState["net"] = "net";
+        ViewState["out"] = "out";
+        ViewState["in"] = "in";
+    })(ViewState || (ViewState = {}));
+
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
         return "state" + name;
@@ -291,8 +313,9 @@
         function HeatMap(patterns, container, svgDims, startYear) {
             var _this = this;
             if (startYear === void 0) { startYear = 2017; }
-            this.state = State.net;
+            this.state = ViewState.net;
             this.curYear = startYear;
+            this.migrationPatterns = patterns;
             this.currentData = patterns.data;
             this.svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
             this.path = d3.geoPath();
@@ -302,9 +325,7 @@
                 /**
                  * Adapted from https://bl.ocks.org/mbostock/4090848
                  */
-                _this.dataSelection = _this.svg.append('g').selectAll('path')
-                    //@ts-ignore
-                    .data(topojson.feature(_this.us, _this.us.objects.states).features);
+                _this.g = _this.svg.append('g');
                 _this.drawMap(null);
                 // Borders
                 _this.svg.append("path")
@@ -317,18 +338,11 @@
         HeatMap.prototype.drawMap = function (stateSelected) {
             var _this = this;
             this.currentRegion = stateSelected;
-            // TODO Needs better logic than this, but there is no selector so later
-            if (stateSelected !== null) {
-                this.state = State.to;
-                this.setColorScale();
-            }
-            else {
-                this.state = State.net;
-                this.setColorScale();
-            }
-            console.debug("Display US Map");
-            console.debug(this.currentData[this.curYear]);
+            this.setColorScale();
             // States
+            this.dataSelection = this.g.selectAll('path')
+                //@ts-ignore
+                .data(topojson.feature(this.us, this.us.objects.states).features);
             var enter = this.dataSelection.enter()
                 .append('path').attr('d', this.path).attr("class", "states")
                 .attr('id', function (d) {
@@ -344,56 +358,123 @@
                 d3.select("#" + id).style('fill', 'darkgray');
             }).on('mouseout', function (d) {
                 var id = stateId(d.properties.name);
-                d3.select("#" + id).style('fill', _this.stateFill(d, stateSelected));
+                d3.select("#" + id).style('fill', _this.stateFill(d, _this.currentRegion));
             }).on('click', function (d) { return _this.focusNode(d); });
-            this.dataSelection.merge(enter).attr('fill', function (d) {
+            this.dataSelection.merge(enter).style('fill', function (d) {
                 return _this.stateFill(d, stateSelected);
             });
+            this.dataSelection.exit(enter).remove();
         };
         HeatMap.prototype.focusNode = function (feature) {
-            console.log("Changing the state selection context " + feature.properties.name);
-            console.log("Collecting edges for state node ID " + RegionEnum[feature.properties.name] + "...");
+            var region = RegionEnum[feature.properties.name];
             //@ts-ignore
-            this.drawMap(RegionEnum[feature.properties.name]);
+            if (region === this.currentRegion) {
+                region = null;
+            }
+            d3.select('.region-select').attr('text', feature.properties.name);
+            //@ts-ignore
+            this.drawMap(region);
         };
         HeatMap.prototype.stateFill = function (d, stateSelection) {
+            console.log('Changing State Fill');
             var name = d.properties.name;
             var nodeId = RegionEnum[name];
             var flowData;
             if (stateSelection === null) {
-                flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+                switch (this.state) {
+                    case ViewState.out:
+                        flowData = this.currentData[this.curYear][nodeId].totalLeft;
+                        break;
+                    case ViewState.in:
+                        flowData = this.currentData[this.curYear][nodeId].totalCame;
+                        break;
+                    default:
+                        flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
+                }
             }
             else {
-                if (this.currentData[this.curYear][nodeId].edges.hasOwnProperty(stateSelection)) {
-                    flowData = this.currentData[this.curYear][nodeId].edges[stateSelection].estimate;
-                }
-                else {
-                    return 'darkgray';
+                switch (this.state) {
+                    case ViewState.out:
+                        if (this.currentData[this.curYear][nodeId].toEdges.hasOwnProperty(stateSelection)) {
+                            flowData = this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate;
+                        }
+                        else {
+                            return 'darkgray';
+                        }
+                        break;
+                    case ViewState.in:
+                        if (this.currentData[this.curYear][nodeId].fromEdges.hasOwnProperty(stateSelection)) {
+                            flowData = this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate;
+                        }
+                        else {
+                            return 'darkgray';
+                        }
+                        break;
+                    default:
+                        if (this.currentData[this.curYear][nodeId].toEdges.hasOwnProperty(stateSelection)) {
+                            flowData = this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate -
+                                this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate;
+                        }
+                        else {
+                            return 'darkgray';
+                        }
                 }
                 if (flowData === undefined) {
                     throw new Error("Was not able to find a suitable edge from node " + d.properties.name + " to " + RegionEnum[stateSelection]);
                 }
             }
-            // Need to add third case of migration from
             switch (this.state) {
-                case State.to:
+                case ViewState.out:
+                    if (this.currentRegion == null)
+                        return d3.interpolateReds(this.colorScale(flowData));
                     return d3.interpolateBlues(this.colorScale(flowData));
+                case ViewState.in:
+                    if (this.currentRegion == null)
+                        return d3.interpolateBlues(this.colorScale(flowData));
+                    return d3.interpolateReds(this.colorScale(flowData));
                 default:
                     return d3.interpolateRdBu(this.colorScale(flowData));
             }
         };
         HeatMap.prototype.setColorScale = function () {
+            var maxValue;
             switch (this.state) {
-                case State.to:
-                    var maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                case ViewState.out:
+                    if (this.currentRegion != null) {
+                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeTo;
+                    }
+                    else {
+                        maxValue = this.migrationPatterns.maxOutflow;
+                    }
+                    console.log("Max: " + maxValue);
                     this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
                     break;
-                case State.from:
-                    this.colorScale = d3.scaleLinear().domain([0, 1e5]).range([0, 1]);
+                case ViewState.in:
+                    console.log(this.currentRegion);
+                    if (this.currentRegion != null) {
+                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeFrom;
+                    }
+                    else {
+                        maxValue = this.migrationPatterns.maxInflow;
+                    }
+                    console.log("Max: " + maxValue);
+                    this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
                     break;
                 default:
-                    this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
+                    console.log(this.currentRegion);
+                    if (this.currentRegion != null) {
+                        maxValue = this.currentData[this.curYear][this.currentRegion].maxEdgeNet;
+                        this.colorScale = d3.scaleLinear().domain([-maxValue, maxValue]).range([0, 1]);
+                    }
+                    else {
+                        this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
+                    }
             }
+        };
+        HeatMap.prototype.toggleMigrationStatistic = function (viewState) {
+            console.log("Toggle View State: " + viewState);
+            this.state = viewState;
+            this.drawMap(this.currentRegion);
         };
         return HeatMap;
     }());
@@ -617,13 +698,20 @@
     //     height: 500,
     //     width: 1000
     // };
+    var geo;
+    var table;
+    var scatter;
     d3.json('data/migration_and_economic_data.json').then(function (data) {
         var migrationPatterns = new MigrationPatterns(data);
-        var table = new Table(migrationPatterns, tableSelection, tableDims);
-        var geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-        var scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+        table = new Table(migrationPatterns, tableSelection, tableDims);
+        geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+        scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
         // TODO Chord Diagram Integration
         // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
+    });
+    // Bind migration statistic to event listeners on the migration statistic dropdown
+    d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', function (d) {
+        geo.toggleMigrationStatistic(d);
     });
 
 }(d3, topojson));

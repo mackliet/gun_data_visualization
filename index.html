@@ -12,9 +12,10 @@
     <script src="https://unpkg.com/topojson@3"></script>
     <!-- Links -->
     <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
     <!-- Local Stylesheets -->
     <link rel="stylesheet" href="css/geo.css"/>
     <link rel="stylesheet" href="css/table.css"/>
@@ -25,13 +26,26 @@
 <!-- Primary Container TODO determine layout for interactions.  What is the central question and which chart shows that?  Focus there -->
 <div class="container">
     <div class="view left">
-        <div class="view geoHeat"></div>
+        <div class="view geo">
+            <div class="geoState">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" href="#" role="button" id="migrationStatistic" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Migration Statistic
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="migrationStatistic">
+                        <a class="dropdown-item" href="#">Net Migration</a>
+                        <a class="dropdown-item" href="#">Migration In</a>
+                        <a class="dropdown-item" href="#">Migration Out</a>
+                    </div>
+                </div>
+                <text class="region-select"></text>
+            </div>
+            <div class="geoHeat"></div>
+        </div>
         <div class="view chord"></div>
-        <div class="view centered_container scatterplot"></div>
+        <div class="view scatterplot"></div>
     </div>
-        <div class="view dataTable"></div>
-    
-
+    <div class="view dataTable"></div>
 </div>
 <!-- Global variable for typescript compatibiblity TODO May not be necessary -->
 <script> const exports = {}; </script>
