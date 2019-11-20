@@ -62,6 +62,9 @@ slider.oninput = function() {
     const curYear = Math.round(scale(this.value));
     geo.changeYear(curYear);
     scatter.change_year(curYear);
+    for (const obj of Array.from([geo, table])) {
+        obj.changeYear(curYear);
+    }
     console.log(`Year: ${curYear}`)
 };
 

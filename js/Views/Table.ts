@@ -24,7 +24,7 @@ export class Table implements IView {
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
     private readonly headerLabels = ['Region', 'Total Flow'];
 
-    readonly curYear: number;
+    public curYear: number;
     readonly currentData: MigrationData;
 
     /**
@@ -132,6 +132,12 @@ export class Table implements IView {
             }
             return width;
         }).attr('fill', 'purple');
+    }
+
+    changeYear(year: number) {
+        console.log(`Year: ${year}`);
+        this.curYear = year;
+        this.loadTable(year);
     }
 
 }
