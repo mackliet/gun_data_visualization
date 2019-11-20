@@ -84,12 +84,20 @@ def convert_migration_csv(complete_data, path, states):
 def add_data_SAGDP10N(complete_data):
     dataframe = pd.read_csv('raw_data/economy/SAGDP10N__ALL_AREAS_1997_2018.csv', delimiter=',')
     for year in complete_data:
-        year_data = dataframe.filter(regex=f'(GeoName)|{year["year"]}')
+        year_data = dataframe.filter(regex=f'(GeoName)|({year["year"]})|(Region)')
         for state in year['data']:
-            state_data = year_data[year_data.GeoName == state['state']]
-            if state_data.empty:
+            state_indicators = year_data[year_data.GeoName == state['state']].filter(regex=f'(GeoName)|({year["year"]})')
+            if state_indicators.empty:
                 continue
-            state['GDP_per_capita'] = int(state_data.iat[0, 1])
+
+            region_info = year_data.filter(regex=f'(GeoName)|(Region)')
+            region_map = {}
+            for area in get_geographic_areas():
+                area_frame = region_info[region_info.GeoName == area]
+                region_map[int(area_frame.iat[0,1])] = area
+
+            state['GDP_per_capita'] = int(state_indicators.iat[0, 1])
+            state['geographic_area'] = region_map[int(region_info[region_info.GeoName == state['state']].iat[0,1])]
 
 # Add GDP data
 # % change
@@ -148,6 +156,9 @@ def get_states():
 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee',
 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'] 
+
+def get_geographic_areas():
+    return ['New England', 'Mideast', 'Great Lakes', 'Plains', 'Southeast', 'Southwest', 'Rocky Mountain', 'Far West']
 
 if __name__ == '__main__':
     main()

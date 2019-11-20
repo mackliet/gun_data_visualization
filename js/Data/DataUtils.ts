@@ -54,3 +54,41 @@ export enum RegionEnum {
     Wisconsin,
     Wyoming,
 }
+
+export enum GeographicAreaEnum
+{
+    'New England', 
+    Mideast, 
+    'Great Lakes', 
+    Plains, 
+    Southeast, 
+    Southwest, 
+    'Rocky Mountain', 
+    'Far West'
+}
+
+export function getRegionStrings()
+{
+    const regions = [];
+    for(let val in RegionEnum)
+    {
+        if(isNaN(Number(val)))
+        {
+            regions.push(val);
+        }
+    }
+    return regions;
+}
+
+export function getGeographicAreaStrings()
+{
+    const geographic_areas = [];
+    for(let val in GeographicAreaEnum)
+    {
+        if(isNaN(Number(val)))
+        {
+            geographic_areas.push(val);
+        }
+    }
+    return geographic_areas;
+}

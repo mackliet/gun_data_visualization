@@ -1,4 +1,4 @@
-import {RegionEnum} from "./DataUtils"
+import {RegionEnum, GeographicAreaEnum} from "./DataUtils"
 
 export interface State_indicators 
 {
@@ -7,6 +7,7 @@ export interface State_indicators
     total_came: number;
     total_left: number
     net_immigration_flow: number;
+    geographic_area: GeographicAreaEnum;
     GDP_per_capita: number;
     GDP_percent_change: number;
     jobs: number;
@@ -34,6 +35,7 @@ export function build_year_to_indicators_map(json_data: Array<any>)
                 total_came: d.total_came,
                 total_left: d.total_left,
                 net_immigration_flow: d.net_immigration_flow,
+                geographic_area: d.geographic_area,
                 GDP_per_capita: d.GDP_per_capita,
                 GDP_percent_change: d.GDP_percent_change,
                 jobs: d.jobs,
