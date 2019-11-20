@@ -58,6 +58,35 @@
         RegionEnum[RegionEnum["Wisconsin"] = 49] = "Wisconsin";
         RegionEnum[RegionEnum["Wyoming"] = 50] = "Wyoming";
     })(RegionEnum || (RegionEnum = {}));
+    var GeographicAreaEnum;
+    (function (GeographicAreaEnum) {
+        GeographicAreaEnum[GeographicAreaEnum["New England"] = 0] = "New England";
+        GeographicAreaEnum[GeographicAreaEnum["Mideast"] = 1] = "Mideast";
+        GeographicAreaEnum[GeographicAreaEnum["Great Lakes"] = 2] = "Great Lakes";
+        GeographicAreaEnum[GeographicAreaEnum["Plains"] = 3] = "Plains";
+        GeographicAreaEnum[GeographicAreaEnum["Southeast"] = 4] = "Southeast";
+        GeographicAreaEnum[GeographicAreaEnum["Southwest"] = 5] = "Southwest";
+        GeographicAreaEnum[GeographicAreaEnum["Rocky Mountain"] = 6] = "Rocky Mountain";
+        GeographicAreaEnum[GeographicAreaEnum["Far West"] = 7] = "Far West";
+    })(GeographicAreaEnum || (GeographicAreaEnum = {}));
+    function getRegionStrings() {
+        var regions = [];
+        for (var val in RegionEnum) {
+            if (isNaN(Number(val))) {
+                regions.push(val);
+            }
+        }
+        return regions;
+    }
+    function getGeographicAreaStrings() {
+        var geographic_areas = [];
+        for (var val in GeographicAreaEnum) {
+            if (isNaN(Number(val))) {
+                geographic_areas.push(val);
+            }
+        }
+        return geographic_areas;
+    }
 
     /**
      * Data structure that contains all the state migration data, immutable
@@ -172,6 +201,7 @@
                     total_came: d.total_came,
                     total_left: d.total_left,
                     net_immigration_flow: d.net_immigration_flow,
+                    geographic_area: d.geographic_area,
                     GDP_per_capita: d.GDP_per_capita,
                     GDP_percent_change: d.GDP_percent_change,
                     jobs: d.jobs,
@@ -559,22 +589,33 @@
     }
 
     var Scatterplot = /** @class */ (function () {
-        function Scatterplot(state_data, container, svgDims, startYear) {
-            if (startYear === void 0) { startYear = 2017; }
-            this.curYear = startYear;
+        function Scatterplot(state_data, container, svg_dims, start_year) {
+            if (start_year === void 0) { start_year = 2017; }
+            container.classed('left', true);
+            var plot_div = container.append('div').classed('plot_container', true).classed('centered_container', true);
+            this.curYear = start_year;
             this.year_to_indicators = state_data;
-            this.cur_year_data = this.year_to_indicators[this.curYear];
+            this.current_year_data = this.year_to_indicators[this.curYear];
             this.container = container;
-            this.dropdownWrapper = container.append('div');
-            this.svg = container.append('svg').attr('height', svgDims.height).attr('width', svgDims.width);
-            this.axesGroup = this.svg.append('g');
-            this.circleGroup = this.svg.append('g');
+            this.legend_div = plot_div.append('div');
+            this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
+            this.state_table = this.legend_div.append('table').classed('state_table', true);
+            this.axes_group = this.svg.append('g');
+            this.circle_group = this.svg.append('g');
             this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-            this.activeX = 'jobs_per_capita';
-            this.activeY = 'net_immigration_flow';
-            this.svgDims = svgDims;
+            this.active_x_indicator = 'jobs_per_capita';
+            this.active_y_indicator = 'net_immigration_flow';
+            this.svg_dims = svg_dims;
             this.padding = 110;
-            this.transition_time = 800;
+            this.default_transition_time = 800;
+            this.year_change_transition_time = 150;
+            this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
+            this.state_to_geo_area = {};
+            for (var _i = 0, _a = this.current_year_data; _i < _a.length; _i++) {
+                var state = _a[_i];
+                this.state_to_geo_area["" + state.state] = "" + state.geographic_area;
+            }
+            this.create_state_table();
             this.create_dropdowns();
             this.create_scales();
             this.update_plot();
@@ -583,134 +624,259 @@
             var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
             return no_underscores[0].toUpperCase() + no_underscores.slice(1);
         };
+        // Currently not used. Can use if we want to, but this data
+        // is now in the state selection table
+        Scatterplot.prototype.create_legend = function () {
+            var _this = this;
+            var geographic_areas = getGeographicAreaStrings();
+            var legend_svg = this.legend_div
+                .append('div')
+                .classed('legend_svg_div', true)
+                .attr('height', 200)
+                .append('svg')
+                .attr('width', 150)
+                .attr('height', 200)
+                .style('float', 'right');
+            legend_svg.selectAll('circle')
+                .data(geographic_areas)
+                .join('circle')
+                .attr("cx", 10)
+                .attr("cy", function (d, i) { return 10 + i * 25; })
+                .attr("r", 7)
+                .style("fill", function (d) { return _this.color_map(d); });
+            legend_svg.selectAll('text')
+                .data(geographic_areas)
+                .join('text')
+                .attr("x", 30)
+                .attr("y", function (d, i) { return 10 + i * 25; })
+                .text(function (d) { return d; })
+                .attr("text-anchor", "left")
+                .style("alignment-baseline", "middle");
+        };
+        Scatterplot.prototype.create_state_table = function () {
+            var _this = this;
+            var that = this;
+            var thead = this.state_table.append('thead');
+            var tbody = this.state_table.append('tbody');
+            tbody.attr('height', (this.svg_dims.height - 2 * this.padding) / 2);
+            thead.append('tr')
+                .selectAll('th')
+                .data(['Selected States'])
+                .join('th')
+                .text(function (d) { return d; });
+            var states = getRegionStrings();
+            var geographic_areas = getGeographicAreaStrings();
+            var all_arr = ['All'];
+            var table_data = [];
+            for (var i = 0; i < states.length; i++) {
+                var col1 = i < all_arr.length ? all_arr[i] : '';
+                var col2 = i < geographic_areas.length ? geographic_areas[i] : '';
+                var col3 = i < states.length ? states[i] : '';
+                table_data.push({ col1: col1, col2: col2, col3: col3 });
+            }
+            var add_switch = function (selection, col_name) {
+                var label = selection.append('label');
+                label.append('input').attr('type', 'checkbox').each(function (d) { this.checked = true; });
+                label.append('font').text(function (d) { return d[col_name]; });
+            };
+            var rows = tbody.selectAll('tr')
+                .data(table_data);
+            var rows_enter = rows.enter().append('tr');
+            var all_column = rows_enter.append('td');
+            var geo_area_column = rows_enter.append('td');
+            var region_column = rows_enter.append('td');
+            all_column = all_column.filter(function (d) { return d.col1 != ''; });
+            geo_area_column = geo_area_column.filter(function (d) { return d.col2 != ''; });
+            add_switch(all_column, 'col1');
+            add_switch(geo_area_column, 'col2');
+            add_switch(region_column, 'col3');
+            rows = rows.merge(rows_enter);
+            geo_area_column.select('font').classed('outlined', true).attr('color', function (d) { return _this.color_map(d.col2); });
+            region_column.select('font').classed('outlined', true).attr('color', function (d) { return _this.color_map(_this.state_to_geo_area[d.col3]); });
+            all_column
+                .select('label')
+                .select('input')
+                .on("change", function () {
+                var checkbox = this;
+                that.circle_selection.classed('unselected', !checkbox.checked);
+                rows.selectAll('input')
+                    .each(function () { this.checked = checkbox.checked; });
+            });
+            geo_area_column
+                .select('label')
+                .select('input')
+                .on("change", function (d) {
+                var geo_area_filter = function (region_d) { return d.col2 == that.state_to_geo_area[region_d.col3]; };
+                var checkbox = this;
+                that.circle_selection.filter(function (state_data) { return "" + state_data.geographic_area == d.col2; })
+                    .classed('unselected', !checkbox.checked);
+                region_column.filter(geo_area_filter)
+                    .select('input')
+                    .each(function () { this.checked = checkbox.checked; });
+                var num_region = region_column.select('input').size();
+                var num_checked_region = region_column.select('input').filter(function () { return this.checked; }).size();
+                all_column.select('input').each(function () { this.checked = num_region == num_checked_region; });
+            });
+            region_column
+                .select('label')
+                .select('input')
+                .on("change", function (d) {
+                var checkbox = this;
+                that.update_checked_states(d.col3, checkbox.checked);
+                var region_same_geo_area = function (region_d) { return that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3]; };
+                var geo_area_for_region = function (geo_col) { return geo_col.col2 == that.state_to_geo_area[d.col3]; };
+                var num_in_geo_area = region_column.filter(region_same_geo_area).select('input').size();
+                var num_checked_in_geo_area = region_column.filter(region_same_geo_area).select('input').filter(function () { return this.checked; }).size();
+                geo_area_column.filter(geo_area_for_region).select('input').each(function () { this.checked = num_in_geo_area == num_checked_in_geo_area; });
+                var num_region = region_column.select('input').size();
+                var num_checked_region = region_column.select('input').filter(function () { return this.checked; }).size();
+                all_column.select('input').each(function () { this.checked = num_region == num_checked_region; });
+            });
+            this.region_column = region_column;
+        };
+        Scatterplot.prototype.update_checked_states = function (state, checked) {
+            this.circle_selection.filter(function (d) { return "" + d.state == state; })
+                .classed('unselected', function (d) { return !checked; });
+        };
         Scatterplot.prototype.create_dropdowns = function () {
             var _this = this;
-            var yWrap = this.dropdownWrapper.append('div').classed('dropdown-panel', true);
-            yWrap.append('div').classed('y-label', true)
+            var dropdown_wrapper = this.legend_div.append('div');
+            var y_wrap = dropdown_wrapper.append('div').classed('dropdown-panel', true);
+            y_wrap.append('div').classed('y-label', true)
                 .append('text')
                 .text('Y Axis Data');
-            yWrap.append('div').attr('id', 'dropdown_y').classed('dropdown', true).append('div').classed('dropdown-content', true)
+            y_wrap.append('div').attr('id', 'dropdown_y').classed('dropdown', true).append('div').classed('dropdown-content', true)
                 .append('select');
-            var xWrap = this.dropdownWrapper.append('div').classed('dropdown-panel', true);
-            xWrap.append('div').classed('x-label', true)
+            var x_wrap = dropdown_wrapper.append('div').classed('dropdown-panel', true);
+            x_wrap.append('div').classed('x-label', true)
                 .append('text')
                 .text('X Axis Data');
-            xWrap.append('div').attr('id', 'dropdown_x').classed('dropdown', true).append('div').classed('dropdown-content', true)
+            x_wrap.append('div').attr('id', 'dropdown_x').classed('dropdown', true).append('div').classed('dropdown-content', true)
                 .append('select');
             var that = this;
             /* X DROPDOWN */
-            var dropX = this.dropdownWrapper.select('#dropdown_x').select('.dropdown-content').select('select');
-            var optionsX = dropX.selectAll('option').data(this.indicators).join('option');
-            optionsX
+            var drop_x = dropdown_wrapper.select('#dropdown_x').select('.dropdown-content').select('select');
+            var options_x = drop_x.selectAll('option').data(this.indicators).join('option');
+            options_x
                 .append('option')
                 .attr('value', function (d) { return d; });
-            optionsX
+            options_x
                 .append('text')
                 .text(function (d) { return Scatterplot.indicator_to_name(d); });
-            optionsX.filter(function (indicator) { return indicator === _this.activeX; })
+            options_x.filter(function (indicator) { return indicator === _this.active_x_indicator; })
                 .attr('selected', true);
-            dropX.on('change', function (d, i) {
+            drop_x.on('change', function (d, i) {
                 var this_select = this;
-                that.activeX = that.indicators[this_select.selectedIndex];
+                that.active_x_indicator = that.indicators[this_select.selectedIndex];
                 that.update_plot();
             });
             /* Y DROPDOWN */
-            var dropY = this.dropdownWrapper.select('#dropdown_y').select('.dropdown-content').select('select');
-            var optionsY = dropY.selectAll('option').data(this.indicators).join('option');
-            optionsY
+            var drop_y = dropdown_wrapper.select('#dropdown_y').select('.dropdown-content').select('select');
+            var options_y = drop_y.selectAll('option').data(this.indicators).join('option');
+            options_y
                 .append('option')
                 .attr('value', function (indicator) { return indicator; });
-            optionsY
+            options_y
                 .append('text')
                 .text(function (d) { return Scatterplot.indicator_to_name(d); });
-            optionsY.filter(function (indicator) { return indicator === _this.activeY; })
+            options_y.filter(function (indicator) { return indicator === _this.active_y_indicator; })
                 .attr('selected', true);
-            dropY.on('change', function (d, i) {
+            drop_y.on('change', function (d, i) {
                 var this_select = this;
-                that.activeY = that.indicators[this_select.selectedIndex];
+                that.active_y_indicator = that.indicators[this_select.selectedIndex];
                 that.update_plot();
             });
         };
         Scatterplot.prototype.create_scales = function () {
-            this.axesGroup.append('g')
+            this.axes_group.append('g')
                 .attr('id', 'x-axis');
-            this.axesGroup.append('g')
+            this.axes_group.append('g')
                 .attr('id', 'y-axis');
-            this.axesGroup
+            this.axes_group
                 .append('text')
                 .classed('x-label', true);
-            this.axesGroup
+            this.axes_group
                 .append('text')
                 .classed('y-label', true);
         };
-        Scatterplot.prototype.update_scales = function () {
+        Scatterplot.prototype.change_year = function (year) {
+            this.current_year_data = this.year_to_indicators[year];
+            this.curYear = year;
+            this.update_plot_with_time(this.year_change_transition_time);
+        };
+        Scatterplot.prototype.update_scales_with_time = function (transition_time) {
             var _this = this;
             var padding = this.padding;
-            var svgDims = this.svgDims;
+            var svg_dims = this.svg_dims;
             var label_padding = 50;
-            var xDomain = [d3.min(this.cur_year_data, function (d) { return d[_this.activeX]; }),
-                d3.max(this.cur_year_data, function (d) { return d[_this.activeX]; })];
-            var yDomain = [d3.min(this.cur_year_data, function (d) { return d[_this.activeY]; }),
-                d3.max(this.cur_year_data, function (d) { return d[_this.activeY]; })];
-            var xScale = d3.scaleLinear()
-                .domain(xDomain)
-                .range([padding, svgDims.width - padding]);
-            var yScale = d3.scaleLinear()
-                .domain(yDomain)
-                .range([svgDims.height - padding, padding]);
-            this.axesGroup.select('#x-axis')
-                .attr('transform', "translate (0," + yScale.range()[0] + ")")
+            var x_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_x_indicator]; }),
+                d3.max(this.current_year_data, function (d) { return d[_this.active_x_indicator]; })];
+            var y_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_y_indicator]; }),
+                d3.max(this.current_year_data, function (d) { return d[_this.active_y_indicator]; })];
+            var x_scale = d3.scaleLinear()
+                .domain(x_domain)
+                .range([padding, svg_dims.width - padding]);
+            var y_scale = d3.scaleLinear()
+                .domain(y_domain)
+                .range([svg_dims.height - padding, padding]);
+            this.axes_group.select('#x-axis')
+                .attr('transform', "translate (0," + y_scale.range()[0] + ")")
                 .transition()
-                .call(d3.axisBottom(xScale).ticks(6))
-                .duration(this.transition_time);
-            this.axesGroup.select('#y-axis')
+                .call(d3.axisBottom(x_scale).ticks(6))
+                .duration(transition_time);
+            this.axes_group.select('#y-axis')
                 .attr('transform', "translate (" + padding + ",0)")
                 .transition()
-                .call(d3.axisLeft(yScale).ticks(6))
-                .duration(this.transition_time);
-            this.axesGroup.select('.x-label')
+                .call(d3.axisLeft(y_scale).ticks(6))
+                .duration(transition_time);
+            this.axes_group.select('.x-label')
                 .style('text-anchor', 'middle')
-                .attr('transform', "translate(" + (xScale.range()[0] + (xScale.range()[1] - xScale.range()[0]) / 2.0) + ", " + (svgDims.height - label_padding) + ")")
-                .text(Scatterplot.indicator_to_name(this.activeX));
-            this.axesGroup.select('.y-label')
+                .attr('transform', "translate(" + (x_scale.range()[0] + (x_scale.range()[1] - x_scale.range()[0]) / 2.0) + ", " + (svg_dims.height - label_padding) + ")")
+                .text(Scatterplot.indicator_to_name(this.active_x_indicator));
+            this.axes_group.select('.y-label')
                 .style('text-anchor', 'middle')
-                .attr('transform', "translate(" + label_padding + ", " + (yScale.range()[0] + (yScale.range()[1] - yScale.range()[0]) / 2.0) + ") rotate(-90)")
-                .text(Scatterplot.indicator_to_name(this.activeY));
-            this.xScale = xScale;
-            this.yScale = yScale;
+                .attr('transform', "translate(" + label_padding + ", " + (y_scale.range()[0] + (y_scale.range()[1] - y_scale.range()[0]) / 2.0) + ") rotate(-90)")
+                .text(Scatterplot.indicator_to_name(this.active_y_indicator));
+            this.x_scale = x_scale;
+            this.y_scale = y_scale;
         };
         Scatterplot.prototype.update_plot = function () {
+            this.update_plot_with_time(this.default_transition_time);
+        };
+        Scatterplot.prototype.update_plot_with_time = function (transition_time) {
             var _this = this;
-            this.update_scales();
+            this.update_scales_with_time(transition_time);
             var that = this;
-            this.circleGroup
-                .selectAll('circle')
-                .data(this.cur_year_data.filter(function (d) { return typeof (d[_this.activeX]) !== 'undefined' && typeof (d[_this.activeY]) !== 'undefined'; }))
-                .join('circle')
-                .attr('fill', 'steelblue')
-                .on('mouseover', function (d) {
-                console.log("MOUSEOVER");
-                var circle = d3.select(this);
-                circle.classed('hovered', true);
-                var is_float = function (num) { return num % 1 !== 0; };
-                var x_val = d[that.activeX];
-                var y_val = d[that.activeY];
-                var lines = ["" + d.state,
-                    Scatterplot.indicator_to_name(that.activeX) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
-                    Scatterplot.indicator_to_name(that.activeY) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
-                var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
-                var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-                Scatterplot.create_tooltip(that.svg, x, y, lines);
-            })
-                .on('mouseout', function (d) {
-                d3.select(this).classed('hovered', false);
-                that.svg.selectAll('.tooltip-group').remove();
-            })
+            this.circle_selection =
+                this.circle_group
+                    .selectAll('circle')
+                    .data(this.current_year_data.filter(function (d) { return typeof (d[_this.active_x_indicator]) !== 'undefined' && typeof (d[_this.active_y_indicator]) !== 'undefined'; }))
+                    .join('circle')
+                    .attr('fill', function (d) { return _this.color_map("" + d.geographic_area); })
+                    .classed('unselected', function (d) { return !_this.region_column.filter(function (row_d) { return "" + d.state == "" + row_d.col3; }).select('input').node().checked; })
+                    .on('mouseover', function (d) {
+                    var circle = d3.select(this);
+                    circle.classed('hovered', true);
+                    var is_float = function (num) { return num % 1 !== 0; };
+                    var x_val = d[that.active_x_indicator];
+                    var y_val = d[that.active_y_indicator];
+                    var lines = ["" + d.state,
+                        Scatterplot.indicator_to_name(that.active_x_indicator) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
+                        Scatterplot.indicator_to_name(that.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
+                    var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+                    var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+                    Scatterplot.create_tooltip(that.svg, x, y, lines);
+                })
+                    .on('mouseout', function (d) {
+                    d3.select(this).classed('hovered', false);
+                    that.svg.selectAll('.tooltip-group').remove();
+                });
+            this.circle_selection
                 .transition()
                 .attr('r', 5)
-                .attr('cx', function (d) { return _this.xScale(d[_this.activeX]); })
-                .attr('cy', function (d) { return _this.yScale(d[_this.activeY]); })
-                .duration(this.transition_time);
+                .attr('cx', function (d) { return _this.x_scale(d[_this.active_x_indicator]); })
+                .attr('cy', function (d) { return _this.y_scale(d[_this.active_y_indicator]); })
+                .duration(transition_time);
         };
         Scatterplot.create_tooltip = function (svg, x, y, text_lines) {
             var tooltip = svg
@@ -795,6 +961,7 @@
         //@ts-ignore
         var curYear = Math.round(scale(this.value));
         geo.changeYear(curYear);
+        scatter.change_year(curYear);
         console.log("Year: " + curYear);
     };
     // Bind migration statistic to event listeners on the migration statistic dropdown

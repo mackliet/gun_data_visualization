@@ -5,9 +5,11 @@
     text-anchor: middle;
 }
 
+.dropdown-panel,
 .dropdown 
 {
     float: right;
+    clear: both;
 }
 
 circle 
@@ -18,4 +20,50 @@ circle
 circle.hovered
 {
     stroke-width: 3px;
+}
+
+circle.unselected
+{
+    opacity: 0.2;
+}
+
+.state_table
+{
+    border: none;
+}
+
+.state_table table
+{
+    border-collapse: collapse;
+}
+
+.state_table tbody
+{
+    display:block;
+    width: 100%;
+    overflow: auto;
+}
+
+.state_table th
+{
+    padding: 5px;
+    text-align: center;
+    border: none;
+} 
+.state_table td 
+{
+    padding-right: 10px;
+    text-align: left;
+    border: none;
+}
+
+.state_table input
+{
+    margin-right: 5px;
+}
+
+font.outlined
+{
+    -webkit-text-stroke-color: black;
+    -webkit-text-stroke-width: 0.1px;
 }
