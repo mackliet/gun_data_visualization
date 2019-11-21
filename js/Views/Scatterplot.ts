@@ -25,6 +25,7 @@ export class Scatterplot implements IView
     readonly year_change_transition_time: number;
     readonly color_map: d3.ScaleOrdinal<string, string>;
     readonly state_to_geo_area: {[key:string]:string}
+    readonly active_year_text: Selection<any, any, any, any>
     region_column: Selection<any, any, any, any>;
     circle_selection: Selection<any, any, any, any>;
     active_x_indicator: string;
@@ -46,11 +47,12 @@ export class Scatterplot implements IView
         this.container = container;
         this.legend_div = plot_div.append('div');
         this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
+        this.active_year_text = this.svg.append('text');
         this.state_table = this.legend_div.append('table').classed('state_table', true);
         this.axes_group = this.svg.append('g');
         this.circle_group = this.svg.append('g');
-        this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-        this.active_x_indicator = 'jobs_per_capita';
+        this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
+        this.active_x_indicator = 'total_left_per_capita';
         this.active_y_indicator = 'net_immigration_flow';
         this.svg_dims = svg_dims;
         this.padding = 110;
@@ -68,12 +70,23 @@ export class Scatterplot implements IView
         this.create_dropdowns();
         this.create_scales();
         this.update_plot();
+        this.setup_active_year();
     };
 
     static indicator_to_name(indicator)
     {
         let no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
         return no_underscores[0].toUpperCase() + no_underscores.slice(1)
+    }
+
+    setup_active_year()
+    {
+        this.active_year_text
+        .style('font-size', `${(this.svg_dims.height-this.padding)/6}px`)
+        .style('opacity', 0.2)
+        .style('text-anchor', 'left')
+        .attr('transform', `translate (${this.x_scale.range()[0] + (this.svg_dims.width-this.padding)/10}, ${this.y_scale.range()[1] +this.padding})`)
+        .text(this.curYear);
     }
 
     // Currently not used. Can use if we want to, but this data
@@ -313,6 +326,7 @@ export class Scatterplot implements IView
     {
         this.current_year_data = this.year_to_indicators[year];
         this.curYear = year;
+        this.active_year_text.text(this.curYear);
         this.update_plot_with_time(this.year_change_transition_time);
     }
 
@@ -322,11 +336,25 @@ export class Scatterplot implements IView
         const svg_dims = this.svg_dims;
         const label_padding = 50;
 
-        const x_domain = [d3.min(this.current_year_data, d => d[this.active_x_indicator]), 
-                         d3.max(this.current_year_data, d => d[this.active_x_indicator])]
+        const find_extreme = 
+        (indicator: string, extreme_func: typeof d3.min) =>
+        {
+            let extreme_val = null;
+            for(let year in this.year_to_indicators)
+            {
+                const year_data = this.year_to_indicators[year];
+                let extreme_for_year = extreme_func(year_data, d => d[indicator])
+                extreme_val = extreme_val === null 
+                            ? extreme_for_year
+                            : extreme_func([extreme_val, extreme_for_year]);
+            }
+            return extreme_val;
+        }
+        const x_domain = [find_extreme(this.active_x_indicator, d3.min), 
+                          find_extreme(this.active_x_indicator, d3.max)]
 
-        const y_domain = [d3.min(this.current_year_data, d => d[this.active_y_indicator]), 
-                         d3.max(this.current_year_data, d => d[this.active_y_indicator])]
+        const y_domain = [find_extreme(this.active_y_indicator, d3.min), 
+                          find_extreme(this.active_y_indicator, d3.max)]
         
         const x_scale = d3.scaleLinear()
                   .domain(x_domain)

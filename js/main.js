@@ -201,6 +201,9 @@
                     total_came: d.total_came,
                     total_left: d.total_left,
                     net_immigration_flow: d.net_immigration_flow,
+                    total_came_per_capita: d.total_came / d.population,
+                    total_left_per_capita: d.total_left / d.population,
+                    net_immigration_flow_per_capita: d.net_immigration_flow / d.population,
                     geographic_area: d.geographic_area,
                     GDP_per_capita: d.GDP_per_capita,
                     GDP_percent_change: d.GDP_percent_change,
@@ -711,11 +714,12 @@
             this.container = container;
             this.legend_div = plot_div.append('div');
             this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
+            this.active_year_text = this.svg.append('text');
             this.state_table = this.legend_div.append('table').classed('state_table', true);
             this.axes_group = this.svg.append('g');
             this.circle_group = this.svg.append('g');
-            this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-            this.active_x_indicator = 'jobs_per_capita';
+            this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
+            this.active_x_indicator = 'total_left_per_capita';
             this.active_y_indicator = 'net_immigration_flow';
             this.svg_dims = svg_dims;
             this.padding = 110;
@@ -731,10 +735,19 @@
             this.create_dropdowns();
             this.create_scales();
             this.update_plot();
+            this.setup_active_year();
         }
         Scatterplot.indicator_to_name = function (indicator) {
             var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
             return no_underscores[0].toUpperCase() + no_underscores.slice(1);
+        };
+        Scatterplot.prototype.setup_active_year = function () {
+            this.active_year_text
+                .style('font-size', (this.svg_dims.height - this.padding) / 6 + "px")
+                .style('opacity', 0.2)
+                .style('text-anchor', 'left')
+                .attr('transform', "translate (" + (this.x_scale.range()[0] + (this.svg_dims.width - this.padding) / 10) + ", " + (this.y_scale.range()[1] + this.padding) + ")")
+                .text(this.curYear);
         };
         // Currently not used. Can use if we want to, but this data
         // is now in the state selection table
@@ -914,6 +927,7 @@
         Scatterplot.prototype.change_year = function (year) {
             this.current_year_data = this.year_to_indicators[year];
             this.curYear = year;
+            this.active_year_text.text(this.curYear);
             this.update_plot_with_time(this.year_change_transition_time);
         };
         Scatterplot.prototype.update_scales_with_time = function (transition_time) {
@@ -921,10 +935,21 @@
             var padding = this.padding;
             var svg_dims = this.svg_dims;
             var label_padding = 50;
-            var x_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_x_indicator]; }),
-                d3.max(this.current_year_data, function (d) { return d[_this.active_x_indicator]; })];
-            var y_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_y_indicator]; }),
-                d3.max(this.current_year_data, function (d) { return d[_this.active_y_indicator]; })];
+            var find_extreme = function (indicator, extreme_func) {
+                var extreme_val = null;
+                for (var year in _this.year_to_indicators) {
+                    var year_data = _this.year_to_indicators[year];
+                    var extreme_for_year = extreme_func(year_data, function (d) { return d[indicator]; });
+                    extreme_val = extreme_val === null
+                        ? extreme_for_year
+                        : extreme_func([extreme_val, extreme_for_year]);
+                }
+                return extreme_val;
+            };
+            var x_domain = [find_extreme(this.active_x_indicator, d3.min),
+                find_extreme(this.active_x_indicator, d3.max)];
+            var y_domain = [find_extreme(this.active_y_indicator, d3.min),
+                find_extreme(this.active_y_indicator, d3.max)];
             var x_scale = d3.scaleLinear()
                 .domain(x_domain)
                 .range([padding, svg_dims.width - padding]);
