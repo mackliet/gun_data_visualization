@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import {Selection} from 'd3-selection';
 import {IView} from "./IView";
+import {createTooltip, removeTooltip} from "./ViewUtils"
 import {Year_to_indicators_map, State_indicators} from "../Data/State_indicators"
 import {RegionEnum,GeographicAreaEnum, getGeographicAreaStrings, getRegionStrings} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
@@ -393,13 +394,13 @@ export class Scatterplot implements IView
                          `${Scatterplot.indicator_to_name(that.active_y_indicator)}: ${is_float(y_val) ? y_val.toFixed(4) : y_val}`];
             const x: number = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
             const y: number = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-            Scatterplot.create_tooltip(that.svg, x, y, lines);
+            createTooltip(that.svg, [x,y], lines);
         })
         .on('mouseout',
         function(d)
         {
             d3.select(this).classed('hovered', false);
-            that.svg.selectAll('.tooltip-group').remove();
+            removeTooltip(that.svg);
         });
 
         this.circle_selection
@@ -409,53 +410,4 @@ export class Scatterplot implements IView
         .attr('cy', d => this.y_scale(d[this.active_y_indicator]))
         .duration(transition_time);
     }
-
-    static create_tooltip(svg: Selection<any, any, any, any>, x: number, y:number, text_lines: Array<string>)
-    {
-        let tooltip = svg
-        .append('g')
-        .classed('tooltip-group', true)
-
-        let tooltip_rect = 
-        tooltip
-        .append('rect')
-        .classed('custom_tooltip',true)
-        .attr('rx', 10)
-        .attr('ry', 10)
-
-        let tooltip_text = tooltip
-        .append('text')
-        .classed('custom_tooltip', true)
-        
-        for(let line of text_lines)
-        {
-            let tspan = tooltip_text
-            .append('tspan')
-            .classed('custom_tooltip', true)
-            .attr('x',0)
-            .attr('y', tooltip_text.node().getBBox().height)
-            .text(line);
-        }
-        
-        tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 20)
-        tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 20)
-        tooltip_text
-        .selectAll('tspan')
-        .attr('x', parseFloat(tooltip_rect.attr('width'))/2)
-        .attr('y', 
-        function()
-        {
-            let current_y = parseFloat(d3.select(this).attr('y'));
-            let rect_height = parseFloat(tooltip_rect.attr('height'));
-            return current_y + rect_height/text_lines.length;
-        });
-
-        const svg_width = parseFloat(svg.attr('width'));
-        const tooltip_width = parseFloat(tooltip_rect.attr('width'));
-        const tooltip_x = x + tooltip_width > svg_width
-                        ? svg_width - tooltip_width - 20
-                        : x
-        tooltip.attr('transform', `translate (${tooltip_x} ${y})`);
-    }
-
 }

@@ -334,6 +334,74 @@
         ViewState["out"] = "out";
         ViewState["in"] = "in";
     })(ViewState || (ViewState = {}));
+    function getTooltipPadding() {
+        return 5;
+    }
+    function addTooltipLines(tooltip_text, tooltip_rect, text_lines) {
+        var test_tspan = tooltip_text.append('tspan').text('TEST');
+        var oneLineHeight = test_tspan.node().getBBox().height;
+        test_tspan.remove();
+        for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
+            var line = text_lines_1[_i];
+            tooltip_text
+                .append('tspan')
+                .classed('custom_tooltip', true)
+                .attr('x', 0)
+                .attr('y', tooltip_text.node().getBBox().height)
+                .text(line);
+        }
+        var padding = getTooltipPadding();
+        tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 2 * padding);
+        tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 2 * padding);
+        tooltip_text
+            .selectAll('tspan')
+            .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
+            .attr('y', function (d, i) {
+            return (i + 1) * oneLineHeight;
+        });
+    }
+    function placeTooltip(svg, tooltip, tooltip_rect, _a) {
+        var x = _a[0], y = _a[1];
+        var padding = getTooltipPadding();
+        var svg_width = parseFloat(svg.attr('width'));
+        var tooltip_width = parseFloat(tooltip_rect.attr('width'));
+        var tooltip_x = x + tooltip_width > svg_width
+            ? svg_width - tooltip_width - 2 * padding
+            : x;
+        var _b = d3.mouse(svg.node()), _ = _b[0], mouseY = _b[1];
+        var tooltip_y = y == mouseY ? (y + 2) : y;
+        tooltip.attr('transform', "translate (" + tooltip_x + " " + tooltip_y + ")");
+    }
+    function createTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg
+            .append('g')
+            .classed('tooltip-group', true);
+        var tooltip_rect = tooltip
+            .append('rect')
+            .classed('custom_tooltip', true)
+            .attr('rx', 10)
+            .attr('ry', 10);
+        var tooltip_text = tooltip
+            .append('text')
+            .classed('custom_tooltip', true);
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function updateTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg.select('.tooltip-group');
+        var tooltip_rect = tooltip.select('rect');
+        var tooltip_text = tooltip.select('text');
+        tooltip_text
+            .selectAll('tspan')
+            .remove();
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function removeTooltip(svg) {
+        svg.select('.tooltip-group').remove();
+    }
 
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
@@ -385,11 +453,17 @@
                 return _this.stateFill(d, stateSelected);
             })
                 .on('mouseover', function (d) {
-                var name = d.properties.name;
-                var nodeId = RegionEnum[name];
                 var id = stateId(d.properties.name);
-                d3.select("#" + id).style('fill', 'darkgray');
-            }).on('mouseout', function (d) {
+                var hoveredState = d3.select("#" + id).style('fill', 'darkgray');
+                _this.handleTooltip(d, hoveredState, createTooltip);
+            })
+                .on('mousemove', function (d) {
+                var id = stateId(d.properties.name);
+                var hoveredState = d3.select("#" + id).style('fill', 'darkgray');
+                _this.handleTooltip(d, hoveredState, updateTooltip);
+            })
+                .on('mouseout', function (d) {
+                removeTooltip(_this.svg);
                 var id = stateId(d.properties.name);
                 d3.select("#" + id).style('fill', _this.stateFill(d, _this.currentRegion));
             }).on('click', function (d) { return _this.focusNode(d); });
@@ -511,6 +585,44 @@
                         this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-1e5, 1e5]);
                     }
             }
+        };
+        HeatMap.prototype.handleTooltip = function (feature, hoveredState, tooltipFunc) {
+            var _this = this;
+            var tooltipTextLines = [];
+            var name = feature.properties.name;
+            var nodeId = RegionEnum[name];
+            var stateSelection = this.currentRegion;
+            if (stateSelection === null || RegionEnum[stateSelection] === name) {
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "Total left: " + _this.currentData[_this.curYear][nodeId].totalLeft;
+                        case ViewState.in:
+                            return "Total came: " + _this.currentData[_this.curYear][nodeId].totalCame;
+                        case ViewState.net:
+                    }
+                    return "Net immigration to " + name + ": " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            else {
+                var stateSelectionName_1 = RegionEnum[stateSelection];
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "Came from " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate;
+                        case ViewState.in:
+                            return "Left for " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate;
+                        case ViewState.net:
+                    }
+                    return "Net immigration from " + name + " to " + stateSelectionName_1 + ": " + (_this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate -
+                        _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate);
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            tooltipFunc(this.svg, d3.mouse(this.svg.node()), tooltipTextLines);
         };
         HeatMap.prototype.updateLegend = function () {
             continuous(this.geoLegend, this.legendScale);
@@ -865,11 +977,11 @@
                         Scatterplot.indicator_to_name(that.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
                     var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
                     var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-                    Scatterplot.create_tooltip(that.svg, x, y, lines);
+                    createTooltip(that.svg, [x, y], lines);
                 })
                     .on('mouseout', function (d) {
                     d3.select(this).classed('hovered', false);
-                    that.svg.selectAll('.tooltip-group').remove();
+                    removeTooltip(that.svg);
                 });
             this.circle_selection
                 .transition()
@@ -877,44 +989,6 @@
                 .attr('cx', function (d) { return _this.x_scale(d[_this.active_x_indicator]); })
                 .attr('cy', function (d) { return _this.y_scale(d[_this.active_y_indicator]); })
                 .duration(transition_time);
-        };
-        Scatterplot.create_tooltip = function (svg, x, y, text_lines) {
-            var tooltip = svg
-                .append('g')
-                .classed('tooltip-group', true);
-            var tooltip_rect = tooltip
-                .append('rect')
-                .classed('custom_tooltip', true)
-                .attr('rx', 10)
-                .attr('ry', 10);
-            var tooltip_text = tooltip
-                .append('text')
-                .classed('custom_tooltip', true);
-            for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
-                var line = text_lines_1[_i];
-                var tspan = tooltip_text
-                    .append('tspan')
-                    .classed('custom_tooltip', true)
-                    .attr('x', 0)
-                    .attr('y', tooltip_text.node().getBBox().height)
-                    .text(line);
-            }
-            tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 20);
-            tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 20);
-            tooltip_text
-                .selectAll('tspan')
-                .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
-                .attr('y', function () {
-                var current_y = parseFloat(d3.select(this).attr('y'));
-                var rect_height = parseFloat(tooltip_rect.attr('height'));
-                return current_y + rect_height / text_lines.length;
-            });
-            var svg_width = parseFloat(svg.attr('width'));
-            var tooltip_width = parseFloat(tooltip_rect.attr('width'));
-            var tooltip_x = x + tooltip_width > svg_width
-                ? svg_width - tooltip_width - 20
-                : x;
-            tooltip.attr('transform', "translate (" + tooltip_x + " " + y + ")");
         };
         return Scatterplot;
     }());

@@ -7,7 +7,8 @@ import {IView} from "./IView";
 import {MigrationData, MigrationPatterns} from "../Data/MigrationPatterns";
 import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
-import {ViewState} from "./ViewUtils";
+import {ViewState, createTooltip, removeTooltip, updateTooltip} from "./ViewUtils";
+import { BreakStatement } from "estree";
 
 const stateId = (name: string) => {
     name = name.replace(/\s/g, "");
@@ -75,11 +76,18 @@ export class HeatMap implements IView {
                 return this.stateFill(d, stateSelected)
             })
             .on('mouseover', (d) => {
-                const name = d.properties.name;
-                const nodeId = RegionEnum[name];
                 const id = stateId(d.properties.name);
-                d3.select(`#${id}`).style('fill', 'darkgray');
-            }).on('mouseout', (d) => {
+                const hoveredState = d3.select(`#${id}`).style('fill', 'darkgray');
+                this.handleTooltip(d, hoveredState, createTooltip)
+            })
+            .on('mousemove', (d) => 
+            {
+                const id = stateId(d.properties.name);
+                const hoveredState = d3.select(`#${id}`).style('fill', 'darkgray');
+                this.handleTooltip(d, hoveredState, updateTooltip);
+            })
+            .on('mouseout', (d) => {
+                removeTooltip(this.svg);
             const id = stateId(d.properties.name);
             d3.select(`#${id}`).style('fill', this.stateFill(d, this.currentRegion));
         }).on('click', (d) => this.focusNode(d));
@@ -206,6 +214,62 @@ export class HeatMap implements IView {
                 }
 
         }
+    }
+
+    private handleTooltip(feature: Feature, 
+                          hoveredState: Selection<any, any, any, any>, 
+                          tooltipFunc: typeof createTooltip)
+    {
+        let tooltipTextLines: string[] = [];
+
+        const name = feature.properties.name;
+        const nodeId = RegionEnum[name];
+        const stateSelection = this.currentRegion
+
+        if (stateSelection === null || RegionEnum[stateSelection] === name) 
+        {
+            const tooltipStatFunc = 
+            (selectedStat) =>
+            {
+                switch(selectedStat)
+                {
+                    case ViewState.out:
+                        return `Total left: ${this.currentData[this.curYear][nodeId].totalLeft}`;
+                    case ViewState.in:
+                        return `Total came: ${this.currentData[this.curYear][nodeId].totalCame}`;
+                    case ViewState.net:
+                    default:
+                        break;
+                }
+                return `Net immigration to ${name}: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
+            }
+            tooltipTextLines = [name, 
+                               tooltipStatFunc(this.state)]
+        }
+        else 
+        {
+            const stateSelectionName:string = RegionEnum[stateSelection]
+            const tooltipStatFunc = 
+            (selectedStat) =>
+            {
+                switch(selectedStat)
+                {
+                    case ViewState.out:
+                        return `Came from ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate}`;
+                    case ViewState.in:
+                        return `Left for ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
+                    case ViewState.net:
+                    default:
+                        break;
+                }
+                return `Net immigration from ${name} to ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate -
+                    this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
+            }
+            tooltipTextLines = [name, 
+                               tooltipStatFunc(this.state)]
+        }
+        
+        tooltipFunc(this.svg, d3.mouse(this.svg.node()), tooltipTextLines);
     }
 
     private updateLegend() {
