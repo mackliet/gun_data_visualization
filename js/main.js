@@ -537,13 +537,9 @@
         HeatMap.prototype.getInterpolate = function () {
             switch (this.state) {
                 case ViewState.out:
-                    if (this.currentRegion == null)
-                        return d3.interpolateReds;
-                    return d3.interpolateBlues;
-                case ViewState.in:
-                    if (this.currentRegion == null)
-                        return d3.interpolateBlues;
                     return d3.interpolateReds;
+                case ViewState.in:
+                    return d3.interpolateBlues;
                 default:
                     return d3.interpolateRdBu;
             }
@@ -595,7 +591,7 @@
             var name = feature.properties.name;
             var nodeId = RegionEnum[name];
             var stateSelection = this.currentRegion;
-            if (stateSelection === null || RegionEnum[stateSelection] === name) {
+            if (stateSelection === null) {
                 var tooltipStatFunc = function (selectedStat) {
                     switch (selectedStat) {
                         case ViewState.out:
@@ -604,7 +600,21 @@
                             return "Total came: " + _this.currentData[_this.curYear][nodeId].totalCame;
                         case ViewState.net:
                     }
-                    return "Net immigration to " + name + ": " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
+                    return "Net immigration: " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            else if (RegionEnum[stateSelection] === name) {
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "Total from other states: " + _this.currentData[_this.curYear][nodeId].totalCame;
+                        case ViewState.in:
+                            return "Total to other states: " + _this.currentData[_this.curYear][nodeId].totalLeft;
+                        case ViewState.net:
+                    }
+                    return "Net immigration: " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
                 };
                 tooltipTextLines = [name,
                     tooltipStatFunc(this.state)];
@@ -614,12 +624,12 @@
                 var tooltipStatFunc = function (selectedStat) {
                     switch (selectedStat) {
                         case ViewState.out:
-                            return "Came from " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate;
+                            return "To " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate;
                         case ViewState.in:
-                            return "Left for " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate;
+                            return "From " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate;
                         case ViewState.net:
                     }
-                    return "Net immigration from " + name + " to " + stateSelectionName_1 + ": " + (_this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate -
+                    return "Net immigration to " + stateSelectionName_1 + ": " + (_this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate -
                         _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate);
                 };
                 tooltipTextLines = [name,

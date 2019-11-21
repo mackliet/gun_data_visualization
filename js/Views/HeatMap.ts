@@ -165,11 +165,9 @@ export class HeatMap implements IView {
     getInterpolate() {
         switch(this.state) {
             case ViewState.out:
-                if (this.currentRegion == null) return d3.interpolateReds;
-                return d3.interpolateBlues;
-            case ViewState.in:
-                if (this.currentRegion == null) return d3.interpolateBlues;
                 return d3.interpolateReds;
+            case ViewState.in:
+                return d3.interpolateBlues;
             default:
                 return d3.interpolateRdBu
         }
@@ -226,7 +224,7 @@ export class HeatMap implements IView {
         const nodeId = RegionEnum[name];
         const stateSelection = this.currentRegion
 
-        if (stateSelection === null || RegionEnum[stateSelection] === name) 
+        if (stateSelection === null) 
         {
             const tooltipStatFunc = 
             (selectedStat) =>
@@ -241,7 +239,27 @@ export class HeatMap implements IView {
                     default:
                         break;
                 }
-                return `Net immigration to ${name}: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
+                return `Net immigration: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
+            }
+            tooltipTextLines = [name, 
+                               tooltipStatFunc(this.state)]
+        }
+        else if(RegionEnum[stateSelection] === name)
+        {
+            const tooltipStatFunc = 
+            (selectedStat) =>
+            {
+                switch(selectedStat)
+                {
+                    case ViewState.out:
+                        return `Total from other states: ${this.currentData[this.curYear][nodeId].totalCame}`;
+                    case ViewState.in:
+                        return `Total to other states: ${this.currentData[this.curYear][nodeId].totalLeft}`;
+                    case ViewState.net:
+                    default:
+                        break;
+                }
+                return `Net immigration: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
             }
             tooltipTextLines = [name, 
                                tooltipStatFunc(this.state)]
@@ -255,14 +273,14 @@ export class HeatMap implements IView {
                 switch(selectedStat)
                 {
                     case ViewState.out:
-                        return `Came from ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate}`;
+                        return `To ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate}`;
                     case ViewState.in:
-                        return `Left for ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
+                        return `From ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
                     case ViewState.net:
                     default:
                         break;
                 }
-                return `Net immigration from ${name} to ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate -
+                return `Net immigration to ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate -
                     this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
             }
             tooltipTextLines = [name, 
