@@ -25,9 +25,6 @@ def create_migration_json(states):
         for filename in sorted(files):
             path = f'{migration_data_dir}{filename}'
             convert_migration_csv(complete_data, path, states)
-    for year in complete_data:
-        for state in year['data']:
-            state['state'] = state['state'].strip()
     return complete_data
 
 def write_data_to_json_file(complete_data):
