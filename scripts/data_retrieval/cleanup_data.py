@@ -11,6 +11,7 @@ def main():
 
     states = get_states()
     data = create_migration_json(states)
+    add_data_SAINC1(data)
     add_data_SAGDP10N(data)
     add_data_SAGDP11N(data)
     add_data_SAEMP25N(data)
@@ -60,10 +61,7 @@ def convert_migration_csv(complete_data, path, states):
                 state['came_from'] = []
                 for other_state in state_columns:
                     if state['state'] == other_state:
-                        if row[state_columns[other_state]] != '':
-                            state['population'] = int(row[state_columns[other_state]])
-                        else:
-                            state['population'] = int(row[2])
+                        continue
                     else:
                         other_state_values = {}
                         other_state_values['state'] = other_state
@@ -81,6 +79,18 @@ def convert_migration_csv(complete_data, path, states):
         state_obj['total_came'] = reduce(lambda current,other_state: other_state['estimate'] + current, state_obj['came_from'], 0)
         state_obj['net_immigration_flow'] = state_obj['total_came'] - state_obj['total_left']
     complete_data.append(file_contents_json)
+
+# Get population data
+def add_data_SAINC1(complete_data):
+    dataframe = pd.read_csv('raw_data/economy/SAINC1__ALL_AREAS_1929_2018.csv', delimiter=',')
+    dataframe = dataframe[dataframe.Description == 'Population (persons) 1/']
+    for year in complete_data:
+        year_data = dataframe.filter(regex=f'(GeoName)|{year["year"]}')
+        for state in year['data']:
+            state_data = year_data[year_data.GeoName.str.startswith(state["state"])]
+            if state_data.empty:
+                continue
+            state['population'] = float(state_data.iat[0, 1])
 
 # Add GDP data
 # per capita
