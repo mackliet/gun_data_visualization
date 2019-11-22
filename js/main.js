@@ -201,6 +201,9 @@
                     total_came: d.total_came,
                     total_left: d.total_left,
                     net_immigration_flow: d.net_immigration_flow,
+                    total_came_per_capita: d.total_came / d.population,
+                    total_left_per_capita: d.total_left / d.population,
+                    net_immigration_flow_per_capita: d.net_immigration_flow / d.population,
                     geographic_area: d.geographic_area,
                     GDP_per_capita: d.GDP_per_capita,
                     GDP_percent_change: d.GDP_percent_change,
@@ -334,6 +337,74 @@
         ViewState["out"] = "out";
         ViewState["in"] = "in";
     })(ViewState || (ViewState = {}));
+    function getTooltipPadding() {
+        return 5;
+    }
+    function addTooltipLines(tooltip_text, tooltip_rect, text_lines) {
+        var test_tspan = tooltip_text.append('tspan').text('TEST');
+        var oneLineHeight = test_tspan.node().getBBox().height;
+        test_tspan.remove();
+        for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
+            var line = text_lines_1[_i];
+            tooltip_text
+                .append('tspan')
+                .classed('custom_tooltip', true)
+                .attr('x', 0)
+                .attr('y', tooltip_text.node().getBBox().height)
+                .text(line);
+        }
+        var padding = getTooltipPadding();
+        tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 2 * padding);
+        tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 2 * padding);
+        tooltip_text
+            .selectAll('tspan')
+            .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
+            .attr('y', function (d, i) {
+            return (i + 1) * oneLineHeight;
+        });
+    }
+    function placeTooltip(svg, tooltip, tooltip_rect, _a) {
+        var x = _a[0], y = _a[1];
+        var padding = getTooltipPadding();
+        var svg_width = parseFloat(svg.attr('width'));
+        var tooltip_width = parseFloat(tooltip_rect.attr('width'));
+        var tooltip_x = x + tooltip_width > svg_width
+            ? svg_width - tooltip_width - 2 * padding
+            : x;
+        var _b = d3.mouse(svg.node()), _ = _b[0], mouseY = _b[1];
+        var tooltip_y = y == mouseY ? (y + 2) : y;
+        tooltip.attr('transform', "translate (" + tooltip_x + " " + tooltip_y + ")");
+    }
+    function createTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg
+            .append('g')
+            .classed('tooltip-group', true);
+        var tooltip_rect = tooltip
+            .append('rect')
+            .classed('custom_tooltip', true)
+            .attr('rx', 10)
+            .attr('ry', 10);
+        var tooltip_text = tooltip
+            .append('text')
+            .classed('custom_tooltip', true);
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function updateTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg.select('.tooltip-group');
+        var tooltip_rect = tooltip.select('rect');
+        var tooltip_text = tooltip.select('text');
+        tooltip_text
+            .selectAll('tspan')
+            .remove();
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function removeTooltip(svg) {
+        svg.select('.tooltip-group').remove();
+    }
 
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
@@ -385,11 +456,17 @@
                 return _this.stateFill(d, stateSelected);
             })
                 .on('mouseover', function (d) {
-                var name = d.properties.name;
-                var nodeId = RegionEnum[name];
                 var id = stateId(d.properties.name);
-                d3.select("#" + id).style('fill', 'darkgray');
-            }).on('mouseout', function (d) {
+                var hoveredState = d3.select("#" + id).style('fill', 'darkgray');
+                _this.handleTooltip(d, hoveredState, createTooltip);
+            })
+                .on('mousemove', function (d) {
+                var id = stateId(d.properties.name);
+                var hoveredState = d3.select("#" + id).style('fill', 'darkgray');
+                _this.handleTooltip(d, hoveredState, updateTooltip);
+            })
+                .on('mouseout', function (d) {
+                removeTooltip(_this.svg);
                 var id = stateId(d.properties.name);
                 d3.select("#" + id).style('fill', _this.stateFill(d, _this.currentRegion));
             }).on('click', function (d) { return _this.focusNode(d); });
@@ -460,13 +537,9 @@
         HeatMap.prototype.getInterpolate = function () {
             switch (this.state) {
                 case ViewState.out:
-                    if (this.currentRegion == null)
-                        return d3.interpolateReds;
-                    return d3.interpolateBlues;
-                case ViewState.in:
-                    if (this.currentRegion == null)
-                        return d3.interpolateBlues;
                     return d3.interpolateReds;
+                case ViewState.in:
+                    return d3.interpolateBlues;
                 default:
                     return d3.interpolateRdBu;
             }
@@ -511,6 +584,58 @@
                         this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-1e5, 1e5]);
                     }
             }
+        };
+        HeatMap.prototype.handleTooltip = function (feature, hoveredState, tooltipFunc) {
+            var _this = this;
+            var tooltipTextLines = [];
+            var name = feature.properties.name;
+            var nodeId = RegionEnum[name];
+            var stateSelection = this.currentRegion;
+            if (stateSelection === null) {
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "Total left: " + _this.currentData[_this.curYear][nodeId].totalLeft;
+                        case ViewState.in:
+                            return "Total came: " + _this.currentData[_this.curYear][nodeId].totalCame;
+                        case ViewState.net:
+                    }
+                    return "Net immigration: " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            else if (RegionEnum[stateSelection] === name) {
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "Total from other states: " + _this.currentData[_this.curYear][nodeId].totalCame;
+                        case ViewState.in:
+                            return "Total to other states: " + _this.currentData[_this.curYear][nodeId].totalLeft;
+                        case ViewState.net:
+                    }
+                    return "Net immigration: " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            else {
+                var stateSelectionName_1 = RegionEnum[stateSelection];
+                var tooltipStatFunc = function (selectedStat) {
+                    switch (selectedStat) {
+                        case ViewState.out:
+                            return "To " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate;
+                        case ViewState.in:
+                            return "From " + stateSelectionName_1 + ": " + _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate;
+                        case ViewState.net:
+                    }
+                    return "Net immigration to " + stateSelectionName_1 + ": " + (_this.currentData[_this.curYear][nodeId].toEdges[stateSelection].estimate -
+                        _this.currentData[_this.curYear][nodeId].fromEdges[stateSelection].estimate);
+                };
+                tooltipTextLines = [name,
+                    tooltipStatFunc(this.state)];
+            }
+            tooltipFunc(this.svg, d3.mouse(this.svg.node()), tooltipTextLines);
         };
         HeatMap.prototype.updateLegend = function () {
             continuous(this.geoLegend, this.legendScale);
@@ -599,11 +724,12 @@
             this.container = container;
             this.legend_div = plot_div.append('div');
             this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
+            this.active_year_text = this.svg.append('text');
             this.state_table = this.legend_div.append('table').classed('state_table', true);
             this.axes_group = this.svg.append('g');
             this.circle_group = this.svg.append('g');
-            this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-            this.active_x_indicator = 'jobs_per_capita';
+            this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
+            this.active_x_indicator = 'total_left_per_capita';
             this.active_y_indicator = 'net_immigration_flow';
             this.svg_dims = svg_dims;
             this.padding = 110;
@@ -619,10 +745,19 @@
             this.create_dropdowns();
             this.create_scales();
             this.update_plot();
+            this.setup_active_year();
         }
         Scatterplot.indicator_to_name = function (indicator) {
             var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
             return no_underscores[0].toUpperCase() + no_underscores.slice(1);
+        };
+        Scatterplot.prototype.setup_active_year = function () {
+            this.active_year_text
+                .style('font-size', (this.svg_dims.height - this.padding) / 6 + "px")
+                .style('opacity', 0.2)
+                .style('text-anchor', 'left')
+                .attr('transform', "translate (" + (this.x_scale.range()[0] + (this.svg_dims.width - this.padding) / 10) + ", " + (this.y_scale.range()[1] + this.padding) + ")")
+                .text(this.curYear);
         };
         // Currently not used. Can use if we want to, but this data
         // is now in the state selection table
@@ -802,6 +937,7 @@
         Scatterplot.prototype.change_year = function (year) {
             this.current_year_data = this.year_to_indicators[year];
             this.curYear = year;
+            this.active_year_text.text(this.curYear);
             this.update_plot_with_time(this.year_change_transition_time);
         };
         Scatterplot.prototype.update_scales_with_time = function (transition_time) {
@@ -809,10 +945,21 @@
             var padding = this.padding;
             var svg_dims = this.svg_dims;
             var label_padding = 50;
-            var x_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_x_indicator]; }),
-                d3.max(this.current_year_data, function (d) { return d[_this.active_x_indicator]; })];
-            var y_domain = [d3.min(this.current_year_data, function (d) { return d[_this.active_y_indicator]; }),
-                d3.max(this.current_year_data, function (d) { return d[_this.active_y_indicator]; })];
+            var find_extreme = function (indicator, extreme_func) {
+                var extreme_val = null;
+                for (var year in _this.year_to_indicators) {
+                    var year_data = _this.year_to_indicators[year];
+                    var extreme_for_year = extreme_func(year_data, function (d) { return d[indicator]; });
+                    extreme_val = extreme_val === null
+                        ? extreme_for_year
+                        : extreme_func([extreme_val, extreme_for_year]);
+                }
+                return extreme_val;
+            };
+            var x_domain = [find_extreme(this.active_x_indicator, d3.min),
+                find_extreme(this.active_x_indicator, d3.max)];
+            var y_domain = [find_extreme(this.active_y_indicator, d3.min),
+                find_extreme(this.active_y_indicator, d3.max)];
             var x_scale = d3.scaleLinear()
                 .domain(x_domain)
                 .range([padding, svg_dims.width - padding]);
@@ -865,11 +1012,11 @@
                         Scatterplot.indicator_to_name(that.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
                     var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
                     var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-                    Scatterplot.create_tooltip(that.svg, x, y, lines);
+                    createTooltip(that.svg, [x, y], lines);
                 })
                     .on('mouseout', function (d) {
                     d3.select(this).classed('hovered', false);
-                    that.svg.selectAll('.tooltip-group').remove();
+                    removeTooltip(that.svg);
                 });
             this.circle_selection
                 .transition()
@@ -877,44 +1024,6 @@
                 .attr('cx', function (d) { return _this.x_scale(d[_this.active_x_indicator]); })
                 .attr('cy', function (d) { return _this.y_scale(d[_this.active_y_indicator]); })
                 .duration(transition_time);
-        };
-        Scatterplot.create_tooltip = function (svg, x, y, text_lines) {
-            var tooltip = svg
-                .append('g')
-                .classed('tooltip-group', true);
-            var tooltip_rect = tooltip
-                .append('rect')
-                .classed('custom_tooltip', true)
-                .attr('rx', 10)
-                .attr('ry', 10);
-            var tooltip_text = tooltip
-                .append('text')
-                .classed('custom_tooltip', true);
-            for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
-                var line = text_lines_1[_i];
-                var tspan = tooltip_text
-                    .append('tspan')
-                    .classed('custom_tooltip', true)
-                    .attr('x', 0)
-                    .attr('y', tooltip_text.node().getBBox().height)
-                    .text(line);
-            }
-            tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 20);
-            tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 20);
-            tooltip_text
-                .selectAll('tspan')
-                .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
-                .attr('y', function () {
-                var current_y = parseFloat(d3.select(this).attr('y'));
-                var rect_height = parseFloat(tooltip_rect.attr('height'));
-                return current_y + rect_height / text_lines.length;
-            });
-            var svg_width = parseFloat(svg.attr('width'));
-            var tooltip_width = parseFloat(tooltip_rect.attr('width'));
-            var tooltip_x = x + tooltip_width > svg_width
-                ? svg_width - tooltip_width - 20
-                : x;
-            tooltip.attr('transform', "translate (" + tooltip_x + " " + y + ")");
         };
         return Scatterplot;
     }());
