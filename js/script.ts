@@ -14,7 +14,7 @@ declare global {
 }
 
 String.prototype.clean = function (this: string) {
-    return this.replace(/\s/g, "_")
+    return this.replace(/\s|%/g, "_")
 };
 
 const tableSelection = d3.select('.dataTable');
@@ -46,7 +46,7 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     migrationPatterns = new MigrationPatterns(data);
     table = new Table(migrationPatterns, tableSelection, tableDims);
     geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-    scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+    // scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
     // TODO Chord Diagram Integration
     // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
 });
@@ -62,6 +62,9 @@ slider.oninput = function() {
     const curYear = Math.round(scale(this.value));
     geo.changeYear(curYear);
     scatter.change_year(curYear);
+    for (const obj of Array.from([geo, table])) {
+        obj.changeYear(curYear);
+    }
     console.log(`Year: ${curYear}`)
 };
 

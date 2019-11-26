@@ -188,7 +188,6 @@ export class HeatMap implements IView {
                 this.legendScale = d3.scaleSequential(this.getInterpolate()).domain(domain);
                 break;
             case ViewState.in:
-                console.log(this.currentRegion);
                 if (this.currentRegion != null) {
                     maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeFrom;
                 } else {
@@ -199,7 +198,6 @@ export class HeatMap implements IView {
                 this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([0,maxValue]);
                 break;
             default:
-                console.log(this.currentRegion);
                 if (this.currentRegion != null) {
                     maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeNet;
                     domain = [-maxValue,maxValue];
@@ -222,7 +220,7 @@ export class HeatMap implements IView {
 
         const name = feature.properties.name;
         const nodeId = RegionEnum[name];
-        const stateSelection = this.currentRegion
+        const stateSelection = this.currentRegion;
 
         if (stateSelection === null) 
         {
@@ -240,7 +238,7 @@ export class HeatMap implements IView {
                         break;
                 }
                 return `Net immigration: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
-            }
+            };
             tooltipTextLines = [name, 
                                tooltipStatFunc(this.state)]
         }
@@ -260,7 +258,7 @@ export class HeatMap implements IView {
                         break;
                 }
                 return `Net immigration: ${this.currentData[this.curYear][nodeId].netImmigrationFlow}`;
-            }
+            };
             tooltipTextLines = [name, 
                                tooltipStatFunc(this.state)]
         }
@@ -282,7 +280,7 @@ export class HeatMap implements IView {
                 }
                 return `Net immigration to ${stateSelectionName}: ${this.currentData[this.curYear][nodeId].toEdges[stateSelection].estimate -
                     this.currentData[this.curYear][nodeId].fromEdges[stateSelection].estimate}`;
-            }
+            };
             tooltipTextLines = [name, 
                                tooltipStatFunc(this.state)]
         }
@@ -300,7 +298,6 @@ export class HeatMap implements IView {
     }
 
     changeYear(year: number) {
-        console.log(`Year: ${year}`);
         this.curYear = year;
         this.drawMap(this.currentRegion);
     }
@@ -315,7 +312,6 @@ function continuous(selectorId, colorScale) {
     let legendHeight = 200,
         legendWidth = 80,
         margin = {top: 10, right: 60, bottom: 10, left: 2};
-    console.log(selectorId);
     d3.select(selectorId).select('canvas').remove();
     let canvas = d3.select(selectorId)
         .style("height", legendHeight + "px")
@@ -331,7 +327,6 @@ function continuous(selectorId, colorScale) {
         .style("top", (margin.top) + "px")
         .style("left", (margin.left) + "px")
         .node();
-    console.log('Done creating canvas');
     let ctx = canvas.getContext("2d");
 
     let legendScale = d3.scaleLinear()
