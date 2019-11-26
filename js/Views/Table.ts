@@ -237,4 +237,10 @@ export class Table implements IView {
         this.loadTable(year);
     }
 
+    changeYear(year: number) {
+        console.log(`Year: ${year}`);
+        this.curYear = year;
+        this.loadTable(year);
+    }
+
 }

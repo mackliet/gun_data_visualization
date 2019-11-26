@@ -60,8 +60,8 @@ slider.oninput = function() {
     const scale = d3.scaleLinear().domain([1, 100]).range([minYear,maxYear]);
     //@ts-ignore
     const curYear = Math.round(scale(this.value));
-    // geo.changeYear(curYear);
-    // scatter.change_year(curYear);
+    geo.changeYear(curYear);
+    scatter.change_year(curYear);
     for (const obj of Array.from([geo, table])) {
         obj.changeYear(curYear);
     }
