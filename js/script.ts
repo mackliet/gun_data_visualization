@@ -46,7 +46,7 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     migrationPatterns = new MigrationPatterns(data);
     table = new Table(migrationPatterns, tableSelection, tableDims);
     geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
-    // scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+    scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
     // TODO Chord Diagram Integration
     // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
 });

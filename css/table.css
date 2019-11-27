@@ -30,3 +30,10 @@ td > svg {
     display: block;
     height: 20px;
 }
+
+.year {
+    font-size: 100px;
+    margin-left: 150px;
+    float: left;
+    color: gray;
+}
