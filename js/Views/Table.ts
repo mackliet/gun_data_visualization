@@ -23,8 +23,9 @@ export class Table implements IView {
     private readonly tBody: Selection<any, MigrationNode, any, any>;
     private readonly flowScale: ScaleLinear<number, number>;
     private readonly migrationScale: ScaleLinear<number, number>;
+    private readonly growthScale: ScaleLinear<number, number>;
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-    private readonly headerLabels = ['Region', 'Total Flow', 'pop %', 'Pop. Growth %', 'Population'];
+    private readonly headerLabels = ['Region', 'Total Flow', 'Flow %', 'Pop. Growth %', 'Population'];
 
     public curYear: number;
     readonly currentData: MigrationData;
@@ -32,9 +33,9 @@ export class Table implements IView {
     /**
      * Table constants
      */
-    private readonly FLOW_RECT_WIDTH = 150;
-    private readonly GROWTH_RECT_WIDTH = 150;
-    private readonly MIGRATION_RECT_WIDTH = 150;
+    private readonly FLOW_RECT_WIDTH = 100;
+    private readonly GROWTH_RECT_WIDTH = 75;
+    private readonly MIGRATION_RECT_WIDTH = 75;
     private readonly POP_RECT_WIDTH = 150;
 
     /**
@@ -53,7 +54,9 @@ export class Table implements IView {
         this.flowScale = d3.scaleLinear<number, number>().range([0, this.FLOW_RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
         this.migrationScale = d3.scaleLinear<number, number>().range([0, this.MIGRATION_RECT_WIDTH])
-            .domain([-.1, .05]);
+            .domain([-.1, .04]);
+        this.growthScale = d3.scaleLinear<number, number>().range([0, this.GROWTH_RECT_WIDTH])
+            .domain([.94, 1.03]);
         this.yearContainer = container.append('div').classed('year', true).text(startYear);
         this.table = container.append('table');
         this.header = this.table.append('thead');
@@ -105,9 +108,13 @@ export class Table implements IView {
                  */
                 this.out(svg.append('rect').classed('out', true), year);
 
-                this.pop(rows.append('td').classed('pop', true).append('text'), year);
+                this.pop(rows.append('td').attr('width', this.MIGRATION_RECT_WIDTH).append('svg')
+                            .attr('width', '100%').attr('height', 10)
+                            .append('rect').classed('pop', true), year);
 
-                this.popGrowth(rows.append('td').classed('popGrowth', true).append('text'), year);
+                this.popGrowth(rows.append('td').attr('width', this.GROWTH_RECT_WIDTH).append('svg')
+                                    .attr('width', '100%').attr('height', 10)
+                                    .append('rect').classed('popGrowth', true), year);
 
                 this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
 
@@ -119,9 +126,9 @@ export class Table implements IView {
                 this.in(update.selectAll('rect').filter('.in'), year);
                 this.out(update.selectAll('rect').filter('.out'), year);
 
-                this.pop(update.selectAll('td').filter('.pop'), year);
+                this.pop(update.selectAll('rect').filter('.pop'), year);
 
-                this.popGrowth(update.selectAll('td').filter('.popGrowth'), year);
+                this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
 
                 this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
             }
@@ -181,13 +188,14 @@ export class Table implements IView {
      */
     out(join, year) {
         join.attr('x', (d) => {
-
+            d = <MigrationNode>this.currentData[year][d.nodeId];
             if (d.netImmigrationFlow < 0) {
                 return this.flowScale(0)
             }
             return this.flowScale(d.netImmigrationFlow);
         }).attr('y', 10).attr('height', 5).attr('width', (d) => {
             let width;
+            d = <MigrationNode>this.currentData[year][d.nodeId];
             if (d.netImmigrationFlow < 0) {
                 width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
                     (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
@@ -204,9 +212,23 @@ export class Table implements IView {
      * @param year current year for the view
      */
     pop(join, year) {
-        join.select('text').text((d) => {
+        join.attr('x', (d) => {
+            d = <MigrationNode>this.currentData[year][d.nodeId];
+            if (d.netImmigrationFlow < 0) {
+                return this.migrationScale(d.netImmigrationFlow / d.totalPopulation);
+            }
+            return this.migrationScale(0);
+        }).attr('y', 5).attr('height', 10).attr('width', (d) => {
+            d = <MigrationNode>this.currentData[year][d.nodeId];
+            const migration = this.migrationScale(0) - this.migrationScale(d.netImmigrationFlow / d.totalPopulation);
+            return Math.abs(migration);
+        }).attr('fill', (d) => {
             d = this.currentData[year][d.nodeId];
-            return (Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100).toFixed(2);
+            if (d.netImmigrationFlow < 0) {
+                return 'red';
+            } else {
+                return 'blue';
+            }
         });
     }
 
@@ -216,12 +238,38 @@ export class Table implements IView {
      * @param year current year for the view
      */
     popGrowth(join, year){
-       join.text((d) => {
-            d = this.currentData[year][d.nodeId];
-            if (year === 2015) {
-                return 'N/A'
+        join.attr('x', (d) => {
+            if (year === 2005) {
+                return this.growthScale(1);
             }
-            return (Math.round((d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation ) * 100) / 100).toFixed(2);
+            d = <MigrationNode>this.currentData[year][d.nodeId];
+            const popDiff = d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation;
+            if (popDiff < 1) {
+                return this.growthScale(popDiff);
+            }
+            return this.growthScale(1.00);
+        }).attr('y', 5).attr('height', 10).attr('width', (d) => {
+            d = <MigrationNode>this.currentData[year][d.nodeId];
+            if (year === 2005) {
+                return 0;
+            }
+            const popDiff = d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation;
+            if (popDiff > 1) {
+                return this.growthScale(popDiff) - this.growthScale(1);
+            }
+
+            return this.growthScale(1.00) - this.growthScale(popDiff);
+        }).attr('fill', (d) => {
+            if (year === 2005) {
+                return 0;
+            }
+            d = this.currentData[year][d.nodeId];
+            const popDiff = d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation;
+            if (popDiff < 1.00) {
+                return 'red';
+            } else {
+                return 'blue';
+            }
         });
     }
 
