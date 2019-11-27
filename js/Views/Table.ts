@@ -22,6 +22,7 @@ export class Table implements IView {
     private readonly yearContainer: Selection<any, any, any, any>;
     private readonly tBody: Selection<any, MigrationNode, any, any>;
     private readonly flowScale: ScaleLinear<number, number>;
+    private readonly migrationScale: ScaleLinear<number, number>;
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
     private readonly headerLabels = ['Region', 'Total Flow', 'pop %', 'Pop. Growth %', 'Population'];
 
@@ -31,7 +32,10 @@ export class Table implements IView {
     /**
      * Table constants
      */
-    private readonly RECT_WIDTH = 200;
+    private readonly FLOW_RECT_WIDTH = 150;
+    private readonly GROWTH_RECT_WIDTH = 150;
+    private readonly MIGRATION_RECT_WIDTH = 150;
+    private readonly POP_RECT_WIDTH = 150;
 
     /**
      *
@@ -46,8 +50,10 @@ export class Table implements IView {
         // TODO Create the data table objects
         // TODO Need to define columns and css classes for various states and objects
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
-        this.flowScale = d3.scaleLinear<number, number>().range([0, this.RECT_WIDTH])
+        this.flowScale = d3.scaleLinear<number, number>().range([0, this.FLOW_RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
+        this.migrationScale = d3.scaleLinear<number, number>().range([0, this.MIGRATION_RECT_WIDTH])
+            .domain([-.1, .05]);
         this.yearContainer = container.append('div').classed('year', true).text(startYear);
         this.table = container.append('table');
         this.header = this.table.append('thead');
@@ -80,151 +86,155 @@ export class Table implements IView {
                 });
                 const tds = rows.append('td');
                 tds.attr('class', 'svg');
-                const svg = tds.append('svg').attr('width', this.RECT_WIDTH).style('max-height', '100%')
+                const svg = tds.append('svg').attr('width', this.FLOW_RECT_WIDTH).style('max-height', '100%')
                     .style('display', 'block');
                 /**
                  * Create net rectangle.  Blue for net inflow, red for net outflow
                  */
-                svg.append('rect').classed('net', true).selectAll('rect').classed('net', true).attr('x', (d) => {
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(d.netImmigrationFlow);
-                    }
-                    return this.flowScale(0);
-                }).attr('y', 0).attr('height', 5).attr('width', (d) => {
-
-                    const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
-                    return flow < 0 ? 0 : flow;
-                }).attr('fill', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return 'red';
-                    } else {
-                        return 'blue';
-                    }
-                });
+                this.net(svg.append('rect').classed('net', true)
+                            .selectAll('rect').classed('net', true)
+                         , year);
                 /**
                  * Create net rectangle.  Blue for net inflow, red for net outflow
                  */
-                svg.append('rect').classed('in', true).attr('x', (d) => {
-
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(0);
-                    }
-                    return this.flowScale(0);
-                }).attr('y', 5).attr('height', 5).attr('width', (d) => {
-
-                    const width = this.flowScale(d.totalCame) - this.flowScale(0);
-                    return width;
-                }).attr('fill', 'blue');
+                this.in(svg.append('rect').classed('in', true), year);
 
 
                 /**
                  * Create difference rectangle.  Should be purple until it ends
                  */
-                svg.append('rect').classed('out', true).attr('x', (d) => {
+                this.out(svg.append('rect').classed('out', true), year);
 
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(0)
-                    }
-                    return this.flowScale(d.netImmigrationFlow);
-                }).attr('y', 10).attr('height', 5).attr('width', (d) => {
-                    let width;
-                    if (d.netImmigrationFlow < 0) {
-                        width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
-                            (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
-                    } else {
-                        width = (this.flowScale(d.totalCame) - this.flowScale(d.netImmigrationFlow));
-                    }
-                    return width;
-                }).attr('fill', 'purple');
+                this.pop(rows.append('td').classed('pop', true).append('text'), year);
 
-                rows.append('td').classed('pop', true).append('text').text((d) => {
-                    return Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100;
-                });
+                this.popGrowth(rows.append('td').classed('popGrowth', true).append('text'), year);
 
-                rows.append('td').classed('popGrowth', true).append('text').text((d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (year === 2015) {
-                        return 'N/A'
-                    }
-                    return (Math.round((d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation ) * 100) / 100).toFixed(2);
-                });
-
-                rows.append('td').classed('popTotal', true).append('text').text((d) => {
-                    d = this.currentData[year][d.nodeId];
-                    return d.totalPopulation;
-                });
+                this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
 
             },
             update => {
                 console.log(update);
                 update = update.transition();
-                update.selectAll('rect').filter('.net').attr('x', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(d.netImmigrationFlow);
-                    }
-                    return this.flowScale(0);
-                }).attr('y', 0).attr('height', 5).attr('width', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
-                    return flow < 0 ? 0 : flow;
-                }).attr('fill', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return 'red';
-                    } else {
-                        return 'blue';
-                    }
-                });
-                update.selectAll('rect').filter('.in').attr('x', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(0);
-                    }
-                    return this.flowScale(0);
-                }).attr('y', 5).attr('height', 5).attr('width', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    const width = this.flowScale(d.totalCame) - this.flowScale(0);
-                    return width;
-                }).attr('fill', 'blue');
-                update.selectAll('rect').filter('.out').attr('x', (d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return this.flowScale(0)
-                    }
-                    return this.flowScale(d.netImmigrationFlow);
-                }).attr('y', 10).attr('height', 5).attr('width', (d) => {
-                    let width;
-                    d = this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
-                            (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
-                    } else {
-                        width = (this.flowScale(d.totalCame) - this.flowScale(d.netImmigrationFlow));
-                    }
-                    return width;
-                }).attr('fill', 'purple');
-                update.selectAll('td').filter('.pop').select('text').text((d) => {
-                    d = this.currentData[year][d.nodeId];
-                    return (Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100).toFixed(2);
-                });
+                this.net(update.selectAll('rect').filter('.net'), year);
+                this.in(update.selectAll('rect').filter('.in'), year);
+                this.out(update.selectAll('rect').filter('.out'), year);
 
-                update.selectAll('td').filter('.popGrowth').select('text').text((d) => {
-                    d = this.currentData[year][d.nodeId];
-                    if (year === 2005) {
-                        return 'N/A'
-                    }
-                    return (Math.round((d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation) * 100) / 100).toFixed(2);
-                });
+                this.pop(update.selectAll('td').filter('.pop'), year);
 
-                update.selectAll('td').filter('.popTotal').select('text').text((d) => {
-                    d = this.currentData[year][d.nodeId];
-                    return d.totalPopulation;
-                });
+                this.popGrowth(update.selectAll('td').filter('.popGrowth'), year);
+
+                this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
             }
         );
 
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    net(join, year) {
+        join.attr('x', (d) => {
+            d = this.currentData[year][d.nodeId];
+            if (d.netImmigrationFlow < 0) {
+                return this.flowScale(d.netImmigrationFlow);
+            }
+            return this.flowScale(0);
+        }).attr('y', 0).attr('height', 5).attr('width', (d) => {
+            d = this.currentData[year][d.nodeId];
+            const flow = this.flowScale(0) - this.flowScale(d.netImmigrationFlow);
+            return flow < 0 ? 0 : flow;
+        }).attr('fill', (d) => {
+            d = this.currentData[year][d.nodeId];
+            if (d.netImmigrationFlow < 0) {
+                return 'red';
+            } else {
+                return 'blue';
+            }
+        });
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    in(join, year) {
+        join.attr('x', (d) => {
+            d = this.currentData[year][d.nodeId];
+            if (d.netImmigrationFlow < 0) {
+                return this.flowScale(0);
+            }
+            return this.flowScale(0);
+        }).attr('y', 5).attr('height', 5).attr('width', (d) => {
+            d = this.currentData[year][d.nodeId];
+            const width = this.flowScale(d.totalCame) - this.flowScale(0);
+            return width;
+        }).attr('fill', 'blue');
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    out(join, year) {
+        join.attr('x', (d) => {
+
+            if (d.netImmigrationFlow < 0) {
+                return this.flowScale(0)
+            }
+            return this.flowScale(d.netImmigrationFlow);
+        }).attr('y', 10).attr('height', 5).attr('width', (d) => {
+            let width;
+            if (d.netImmigrationFlow < 0) {
+                width = (this.flowScale(d.totalCame) - this.flowScale(0)) +
+                    (this.flowScale(0) - this.flowScale(d.netImmigrationFlow)) - (this.flowScale(0) - this.flowScale(d.netImmigrationFlow));
+            } else {
+                width = (this.flowScale(d.totalCame) - this.flowScale(d.netImmigrationFlow));
+            }
+            return width;
+        }).attr('fill', 'purple');
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    pop(join, year) {
+        join.select('text').text((d) => {
+            d = this.currentData[year][d.nodeId];
+            return (Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100).toFixed(2);
+        });
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    popGrowth(join, year){
+       join.text((d) => {
+            d = this.currentData[year][d.nodeId];
+            if (year === 2015) {
+                return 'N/A'
+            }
+            return (Math.round((d.totalPopulation / this.currentData[year - 1][d.nodeId].totalPopulation ) * 100) / 100).toFixed(2);
+        });
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    popTotal(join, year) {
+        join.text((d) => {
+            d = this.currentData[year][d.nodeId];
+            return d.totalPopulation;
+        });
     }
 
     labelListener(l) {
