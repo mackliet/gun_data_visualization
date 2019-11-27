@@ -230,17 +230,24 @@
         function Table(migrationPatterns, container, svgDims, startYear) {
             if (startYear === void 0) { startYear = 2017; }
             // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-            this.headerLabels = ['Region', 'Total Flow', 'pop %', 'Pop. Growth %', 'Population'];
+            this.headerLabels = ['Region', 'Total Flow', 'Flow %', 'Pop. Growth %', 'Population'];
             /**
              * Table constants
              */
-            this.RECT_WIDTH = 200;
+            this.FLOW_RECT_WIDTH = 100;
+            this.GROWTH_RECT_WIDTH = 75;
+            this.MIGRATION_RECT_WIDTH = 75;
+            this.POP_RECT_WIDTH = 150;
             this.currentData = migrationPatterns.data;
             // TODO Create the data table objects
             // TODO Need to define columns and css classes for various states and objects
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
-            this.flowScale = d3.scaleLinear().range([0, this.RECT_WIDTH])
+            this.flowScale = d3.scaleLinear().range([0, this.FLOW_RECT_WIDTH])
                 .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
+            this.migrationScale = d3.scaleLinear().range([0, this.MIGRATION_RECT_WIDTH])
+                .domain([-.1, .04]);
+            this.growthScale = d3.scaleLinear().range([0, this.GROWTH_RECT_WIDTH])
+                .domain([.94, 1.03]);
             this.yearContainer = container.append('div').classed('year', true).text(startYear);
             this.table = container.append('table');
             this.header = this.table.append('thead');
@@ -273,139 +280,195 @@
                 });
                 var tds = rows.append('td');
                 tds.attr('class', 'svg');
-                var svg = tds.append('svg').attr('width', _this.RECT_WIDTH).style('max-height', '100%')
+                var svg = tds.append('svg').attr('width', _this.FLOW_RECT_WIDTH).style('max-height', '100%')
                     .style('display', 'block');
                 /**
                  * Create net rectangle.  Blue for net inflow, red for net outflow
                  */
-                svg.append('rect').classed('net', true).selectAll('rect').classed('net', true).attr('x', function (d) {
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(d.netImmigrationFlow);
-                    }
-                    return _this.flowScale(0);
-                }).attr('y', 0).attr('height', 5).attr('width', function (d) {
-                    var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
-                    return flow < 0 ? 0 : flow;
-                }).attr('fill', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return 'red';
-                    }
-                    else {
-                        return 'blue';
-                    }
-                });
+                _this.net(svg.append('rect').classed('net', true)
+                    .selectAll('rect').classed('net', true), year);
                 /**
                  * Create net rectangle.  Blue for net inflow, red for net outflow
                  */
-                svg.append('rect').classed('in', true).attr('x', function (d) {
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(0);
-                    }
-                    return _this.flowScale(0);
-                }).attr('y', 5).attr('height', 5).attr('width', function (d) {
-                    var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
-                    return width;
-                }).attr('fill', 'blue');
+                _this.in(svg.append('rect').classed('in', true), year);
                 /**
                  * Create difference rectangle.  Should be purple until it ends
                  */
-                svg.append('rect').classed('out', true).attr('x', function (d) {
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(0);
-                    }
-                    return _this.flowScale(d.netImmigrationFlow);
-                }).attr('y', 10).attr('height', 5).attr('width', function (d) {
-                    var width;
-                    if (d.netImmigrationFlow < 0) {
-                        width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
-                            (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
-                    }
-                    else {
-                        width = (_this.flowScale(d.totalCame) - _this.flowScale(d.netImmigrationFlow));
-                    }
-                    return width;
-                }).attr('fill', 'purple');
-                rows.append('td').classed('pop', true).append('text').text(function (d) {
-                    return Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100;
-                });
-                rows.append('td').classed('popGrowth', true).append('text').text(function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (year === 2015) {
-                        return 'N/A';
-                    }
-                    return (Math.round((d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation) * 100) / 100).toFixed(2);
-                });
-                rows.append('td').classed('popTotal', true).append('text').text(function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    return d.totalPopulation;
-                });
+                _this.out(svg.append('rect').classed('out', true), year);
+                _this.pop(rows.append('td').attr('width', _this.MIGRATION_RECT_WIDTH).append('svg')
+                    .attr('width', '100%').attr('height', 10)
+                    .append('rect').classed('pop', true), year);
+                _this.popGrowth(rows.append('td').attr('width', _this.GROWTH_RECT_WIDTH).append('svg')
+                    .attr('width', '100%').attr('height', 10)
+                    .append('rect').classed('popGrowth', true), year);
+                _this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
             }, function (update) {
                 console.log(update);
                 update = update.transition();
-                update.selectAll('rect').filter('.net').attr('x', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(d.netImmigrationFlow);
-                    }
-                    return _this.flowScale(0);
-                }).attr('y', 0).attr('height', 5).attr('width', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
-                    return flow < 0 ? 0 : flow;
-                }).attr('fill', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return 'red';
-                    }
-                    else {
-                        return 'blue';
-                    }
-                });
-                update.selectAll('rect').filter('.in').attr('x', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(0);
-                    }
-                    return _this.flowScale(0);
-                }).attr('y', 5).attr('height', 5).attr('width', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
-                    return width;
-                }).attr('fill', 'blue');
-                update.selectAll('rect').filter('.out').attr('x', function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        return _this.flowScale(0);
-                    }
+                _this.net(update.selectAll('rect').filter('.net'), year);
+                _this.in(update.selectAll('rect').filter('.in'), year);
+                _this.out(update.selectAll('rect').filter('.out'), year);
+                _this.pop(update.selectAll('rect').filter('.pop'), year);
+                _this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
+                _this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year);
+            });
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.net = function (join, year) {
+            var _this = this;
+            join.attr('x', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
                     return _this.flowScale(d.netImmigrationFlow);
-                }).attr('y', 10).attr('height', 5).attr('width', function (d) {
-                    var width;
-                    d = _this.currentData[year][d.nodeId];
-                    if (d.netImmigrationFlow < 0) {
-                        width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
-                            (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
-                    }
-                    else {
-                        width = (_this.flowScale(d.totalCame) - _this.flowScale(d.netImmigrationFlow));
-                    }
-                    return width;
-                }).attr('fill', 'purple');
-                update.selectAll('td').filter('.pop').select('text').text(function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    return (Math.round((d.netImmigrationFlow / d.totalPopulation) * 100) / 100).toFixed(2);
-                });
-                update.selectAll('td').filter('.popGrowth').select('text').text(function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    if (year === 2005) {
-                        return 'N/A';
-                    }
-                    return (Math.round((d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation) * 100) / 100).toFixed(2);
-                });
-                update.selectAll('td').filter('.popTotal').select('text').text(function (d) {
-                    d = _this.currentData[year][d.nodeId];
-                    return d.totalPopulation;
-                });
+                }
+                return _this.flowScale(0);
+            }).attr('y', 0).attr('height', 5).attr('width', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                var flow = _this.flowScale(0) - _this.flowScale(d.netImmigrationFlow);
+                return flow < 0 ? 0 : flow;
+            }).attr('fill', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    return 'red';
+                }
+                else {
+                    return 'blue';
+                }
+            });
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.in = function (join, year) {
+            var _this = this;
+            join.attr('x', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    return _this.flowScale(0);
+                }
+                return _this.flowScale(0);
+            }).attr('y', 5).attr('height', 5).attr('width', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                var width = _this.flowScale(d.totalCame) - _this.flowScale(0);
+                return width;
+            }).attr('fill', 'blue');
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.out = function (join, year) {
+            var _this = this;
+            join.attr('x', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    return _this.flowScale(0);
+                }
+                return _this.flowScale(d.netImmigrationFlow);
+            }).attr('y', 10).attr('height', 5).attr('width', function (d) {
+                var width;
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    width = (_this.flowScale(d.totalCame) - _this.flowScale(0)) +
+                        (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow)) - (_this.flowScale(0) - _this.flowScale(d.netImmigrationFlow));
+                }
+                else {
+                    width = (_this.flowScale(d.totalCame) - _this.flowScale(d.netImmigrationFlow));
+                }
+                return width;
+            }).attr('fill', 'purple');
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.pop = function (join, year) {
+            var _this = this;
+            join.attr('x', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    return _this.migrationScale(d.netImmigrationFlow / d.totalPopulation);
+                }
+                return _this.migrationScale(0);
+            }).attr('y', 5).attr('height', 10).attr('width', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                var migration = _this.migrationScale(0) - _this.migrationScale(d.netImmigrationFlow / d.totalPopulation);
+                return Math.abs(migration);
+            }).attr('fill', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (d.netImmigrationFlow < 0) {
+                    return 'red';
+                }
+                else {
+                    return 'blue';
+                }
+            });
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.popGrowth = function (join, year) {
+            var _this = this;
+            join.attr('x', function (d) {
+                if (year === 2005) {
+                    return _this.growthScale(1);
+                }
+                d = _this.currentData[year][d.nodeId];
+                var popDiff = d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation;
+                if (popDiff < 1) {
+                    return _this.growthScale(popDiff);
+                }
+                return _this.growthScale(1.00);
+            }).attr('y', 5).attr('height', 10).attr('width', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                if (year === 2005) {
+                    return 0;
+                }
+                var popDiff = d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation;
+                if (popDiff > 1) {
+                    return _this.growthScale(popDiff) - _this.growthScale(1);
+                }
+                return _this.growthScale(1.00) - _this.growthScale(popDiff);
+            }).attr('fill', function (d) {
+                if (year === 2005) {
+                    return 0;
+                }
+                d = _this.currentData[year][d.nodeId];
+                var popDiff = d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation;
+                if (popDiff < 1.00) {
+                    return 'red';
+                }
+                else {
+                    return 'blue';
+                }
+            }).attr('population', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                return d.totalPopulation;
+            }).attr('popGrowth', function (d) {
+                d = _this.currentData[year][d.nodeId];
+                return d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation;
+            });
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.popTotal = function (join, year) {
+            var _this = this;
+            join.text(function (d) {
+                d = _this.currentData[year][d.nodeId];
+                return d.totalPopulation;
             });
         };
         Table.prototype.labelListener = function (l) {
