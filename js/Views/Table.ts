@@ -19,6 +19,7 @@ export class Table implements IView {
     private readonly header: Selection<any, any, any, any>;
     private readonly axisHeader: Selection<any, any, any, any>;
     private readonly titleHeader: Selection<any, any, any, any>;
+    private readonly yearContainer: Selection<any, any, any, any>;
     private readonly tBody: Selection<any, MigrationNode, any, any>;
     private readonly flowScale: ScaleLinear<number, number>;
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
@@ -47,6 +48,7 @@ export class Table implements IView {
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
         this.flowScale = d3.scaleLinear<number, number>().range([0, this.RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
+        this.yearContainer = container.append('div').classed('year', true).text(startYear);
         this.table = container.append('table');
         this.header = this.table.append('thead');
         this.axisHeader = this.header.append('tr');
@@ -71,6 +73,7 @@ export class Table implements IView {
             return e.nodeId
         }).join(
             enter => {
+                //enter.append('tr').classed('year', true);
                 const rows = enter.append('tr');
                 rows.append('td').append('text').text((d) => {
                     return RegionEnum[d.nodeId];
@@ -224,20 +227,12 @@ export class Table implements IView {
 
     }
 
-
-
-
     labelListener(l) {
         console.debug(`Clicked ${l} header`);
     }
 
     changeYear(year: number) {
-        console.log(`Year: ${year}`);
-        this.curYear = year;
-        this.loadTable(year);
-    }
-
-    changeYear(year: number) {
+        this.yearContainer.text(year);
         console.log(`Year: ${year}`);
         this.curYear = year;
         this.loadTable(year);
