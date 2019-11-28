@@ -48,9 +48,13 @@ tspan.custom_tooltip
     float: left;
 }
 
+.play {
+    float: left;
+}
+
 /* Lifted from https://www.w3schools.com/howto/howto_js_rangeslider.asp */
 .slider {
-    margin-left: 100px;
+    margin-top: 20px;
     -webkit-appearance: none;
     width: 90%;
     height: 15px;
@@ -60,7 +64,7 @@ tspan.custom_tooltip
     opacity: 0.7;
     -webkit-transition: .2s;
     transition: opacity .2s;
-    float: left;
+    /*float: left;*/
 }
 
 .slider::-webkit-slider-thumb {

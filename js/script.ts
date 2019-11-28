@@ -11,6 +11,9 @@ declare global {
     interface String {
         clean(): string
     }
+    interface HTMLElement {
+        value: number;
+    }
 }
 
 String.prototype.clean = function (this: string) {
@@ -34,7 +37,8 @@ const scatterDims = {
     width: 700
 };
 
-let slider = document.getElementById("myRange");
+let slider = document.getElementById("yearSlider");
+let play = d3.select(".play");
 //@ts-ignore
 
 var geo: HeatMap;
@@ -65,8 +69,20 @@ slider.oninput = function() {
     for (const obj of Array.from([geo, table])) {
         obj.changeYear(curYear);
     }
-    console.log(`Year: ${curYear}`)
 };
+
+play.on('click', async () => {
+    slider.value = 1;
+    slider.dispatchEvent(new Event('input'));
+    for (let year in migrationPatterns.years) {
+        const t = (Number.parseInt(year) + 1) * 1000;
+        await setTimeout(() => {
+            //@ts-ignore
+            slider.stepUp();
+            slider.dispatchEvent(new Event('input'));
+        }, t);
+    }
+});
 
 // Bind migration statistic to event listeners on the migration statistic dropdown
 d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', (d) => {
