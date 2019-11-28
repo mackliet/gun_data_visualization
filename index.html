@@ -46,6 +46,10 @@
             </div>
         </div>
         <div class="view slidercontainer">
+            <svg height="50px" width="50px" class="play">
+                <circle class="play" cx="25px" cy="25px" r="23" fill="white" style="stroke:gray;" stroke-width="3px"></circle>
+                <polygon points="20,15 20,35, 35,25" style="fill:darkgray;stroke:dimgray;stroke-width: 1px;"></polygon>
+            </svg>
             <input type="range" min="1" max="13" value="13" class="slider" id="yearSlider">
         </div>
         <div class="view scatterplot"></div>
@@ -53,7 +57,17 @@
     <div class="view dataTable"></div>
 </div>
 <!-- Global variable for typescript compatibiblity TODO May not be necessary -->
-<script> const exports = {}; </script>
+<script>
+    const exports = {};
+    d3.selectAll('circle').filter('.play').on('mouseover', () => {
+        d3.selectAll('circle').filter('.play').style('stroke-width', "5px")
+        d3.selectAll('polygon').style('stroke-width', "3px").attr("fill", "grey");
+    });
+    d3.selectAll('circle').filter('.play').on('mouseout', () => {
+        d3.selectAll('circle').filter('.play').style('stroke-width', null)
+        d3.selectAll('polygon').style('stroke-width', null).attr("fill", "dimgray");;
+    })
+</script>
 <!-- Import generated javascript -->
 <script type="application/javascript" src="js/main.js"></script>
 </body>

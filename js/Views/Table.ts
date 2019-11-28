@@ -73,16 +73,14 @@ export class Table implements IView {
      * Class to refresh the data table for sorting, brush, or selections
      */
     loadTable(year) {
-        console.debug(`Loading data table ${year}`);
         const data = this.currentData[year];
-        console.log(data[0].year);
         //@ts-ignore
-        const update = this.tBody.selectAll('tr').data(data, (d) => {
+        this.tBody.selectAll('tr').data(data, (d) => {
             const e: MigrationNode = <MigrationNode>d;
             return e.nodeId
         }).join(
             enter => {
-                //enter.append('tr').classed('year', true);
+
                 const rows = enter.append('tr');
                 rows.append('td').append('text').text((d) => {
                     return RegionEnum[d.nodeId];
@@ -120,7 +118,7 @@ export class Table implements IView {
 
             },
             update => {
-                console.log(update);
+
                 update = update.transition();
                 this.net(update.selectAll('rect').filter('.net'), year);
                 this.in(update.selectAll('rect').filter('.in'), year);
@@ -291,7 +289,6 @@ export class Table implements IView {
 
     changeYear(year: number) {
         this.yearContainer.text(year);
-        console.log(`Year: ${year}`);
         this.curYear = year;
         this.loadTable(year);
     }

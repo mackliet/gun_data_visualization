@@ -354,7 +354,6 @@ function continuous(selectorId, colorScale) {
     */
 
     let legendAxis = d3.axisRight(legendScale).tickSize(6).ticks(8);
-    console.log('Creating svg');
     d3.select(selectorId).select('svg').remove();
     let svg = d3.select(selectorId).append("svg")
         .attr("height", (legendHeight) + "px")
