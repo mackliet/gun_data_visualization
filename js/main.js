@@ -1213,7 +1213,7 @@
         //@ts-ignore
         var minYear = Math.min.apply(Math, migrationPatterns.years);
         var maxYear = Math.max.apply(Math, migrationPatterns.years);
-        var scale = d3.scaleLinear().domain([1, 100]).range([minYear, maxYear]);
+        var scale = d3.scaleLinear().domain([1, 13]).range([minYear, maxYear]);
         //@ts-ignore
         var curYear = Math.round(scale(this.value));
         geo.changeYear(curYear);

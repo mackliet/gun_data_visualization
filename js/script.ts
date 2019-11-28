@@ -57,7 +57,7 @@ slider.oninput = function() {
     //@ts-ignore
     const minYear = Math.min(...migrationPatterns.years);
     const maxYear = Math.max(...migrationPatterns.years);
-    const scale = d3.scaleLinear().domain([1, 100]).range([minYear,maxYear]);
+    const scale = d3.scaleLinear().domain([1, 13]).range([minYear,maxYear]);
     //@ts-ignore
     const curYear = Math.round(scale(this.value));
     geo.changeYear(curYear);
