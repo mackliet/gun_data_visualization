@@ -451,12 +451,6 @@
                 else {
                     return 'blue';
                 }
-            }).attr('population', function (d) {
-                d = _this.currentData[year][d.nodeId];
-                return d.totalPopulation;
-            }).attr('popGrowth', function (d) {
-                d = _this.currentData[year][d.nodeId];
-                return d.totalPopulation / _this.currentData[year - 1][d.nodeId].totalPopulation;
             });
         };
         /**
