@@ -46,6 +46,7 @@ tspan.custom_tooltip
 .slidercontainer {
     width: 100%;
     float: left;
+    cursor: pointer;
 }
 
 .play {
