@@ -257,35 +257,35 @@
                 var svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
                 if (l === '1') {
                     //@ts-ignore
-                    svgAxis.append('g').attr("transform", "translate(8, 48)").call(d3.axisBottom().scale(this.flowScale).ticks(8)).selectAll('text').style("text-anchor", "end")
-                        .attr("dx", "-.5em")
-                        // .attr("dy", ".01em")
-                        .attr("transform", "rotate(90)");
+                    var axis_1 = d3.axisBottom().scale(this.flowScale).ticks(8);
+                    this.addAxis(svgAxis, axis_1);
                 }
                 else if (l == '2') {
                     //@ts-ignore
-                    var axis_1 = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat(function (d) {
+                    var axis_2 = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat(function (d) {
                         return Number.parseFloat(d) * 100 + '%';
                     });
-                    svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis_1).selectAll('text').style("text-anchor", "end")
-                        .attr("dx", "-.5em")
-                        // .attr("dy", ".01em")
-                        .attr("transform", "rotate(90)");
+                    this.addAxis(svgAxis, axis_2);
                 }
                 else if (l == '3') {
                     //@ts-ignore
-                    var axis_2 = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat(function (d) {
+                    var axis_3 = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat(function (d) {
                         return (Number.parseFloat(d) * 100) - 100 + '%';
                     });
-                    svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis_2).selectAll('text').style("text-anchor", "end")
-                        .attr("dx", "-.5em")
-                        // .attr("dy", ".01em")
-                        .attr("transform", "rotate(90)");
+                    this.addAxis(svgAxis, axis_3, 15);
                 }
             }
             this.tBody = this.table.append('tbody');
             this.loadTable(startYear);
         }
+        Table.prototype.addAxis = function (el, axis, x) {
+            if (x === void 0) { x = 8; }
+            //@ts-ignore
+            el.append('g').attr("transform", "translate(" + x + ", 48)").call(axis).selectAll('text').style("text-anchor", "end")
+                .attr("dx", "-.5em")
+                // .attr("dy", ".01em")
+                .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
+        };
         /**
          * Class to refresh the data table for sorting, brush, or selections
          */

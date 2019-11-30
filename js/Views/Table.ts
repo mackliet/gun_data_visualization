@@ -66,32 +66,22 @@ export class Table implements IView {
             const svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
             if (l === '1') {
                 //@ts-ignore
-                svgAxis.append('g').attr("transform", "translate(8, 48)").call(d3.axisBottom().scale(this.flowScale).ticks(8)).selectAll('text').style("text-anchor", "end")
-                    .attr("dx", "-.5em")
-                    // .attr("dy", ".01em")
-                    .attr("transform", "rotate(90)")
-                    ;
+                const axis = d3.axisBottom().scale(this.flowScale).ticks(8);
+                this.addAxis(svgAxis, axis);
 
             } else if (l == '2'){
                 //@ts-ignore
                 const axis = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat((d) => {
                     return Number.parseFloat(d) * 100 + '%';
                 });
-                svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis).selectAll('text').style("text-anchor", "end")
-                    .attr("dx", "-.5em")
-                    // .attr("dy", ".01em")
-                    .attr("transform", "rotate(90)")
-                ;
+                this.addAxis(svgAxis, axis);
+
             } else if (l == '3'){
                 //@ts-ignore
                 const axis = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat((d) => {
                     return (Number.parseFloat(d) * 100) - 100 + '%';
                 });
-                svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis).selectAll('text').style("text-anchor", "end")
-                    .attr("dx", "-.5em")
-                    // .attr("dy", ".01em")
-                    .attr("transform", "rotate(90)")
-                ;
+                this.addAxis(svgAxis, axis, 15);
             }
         }
         this.tBody = this.table.append('tbody');
@@ -310,6 +300,14 @@ export class Table implements IView {
             d = this.currentData[year][d.nodeId];
             return d.totalPopulation;
         });
+    }
+
+    addAxis(el: Selection<any, any, any, any>, axis: d3.AxisScale<number>, x: number = 8){
+        //@ts-ignore
+        el.append('g').attr("transform", `translate(${x}, 48)`).call(axis).selectAll('text').style("text-anchor", "end")
+            .attr("dx", "-.5em")
+            // .attr("dy", ".01em")
+            .attr("transform", `translate(${-x + 8}, 0) rotate(90)`)
     }
 
     labelListener(l) {
