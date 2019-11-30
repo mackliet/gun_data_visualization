@@ -25,7 +25,7 @@ export class Table implements IView {
     private readonly migrationScale: ScaleLinear<number, number>;
     private readonly growthScale: ScaleLinear<number, number>;
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-    private readonly headerLabels = ['Region', 'Total Flow', 'Flow %', 'Pop. Growth %', 'Population'];
+    private readonly headerLabels = ['Region', 'Total Flow', 'Pop. Flow', 'Pop. Growth']; //, 'Population'];
 
     public curYear: number;
     readonly currentData: MigrationData;
@@ -48,8 +48,6 @@ export class Table implements IView {
     constructor(migrationPatterns: MigrationPatterns, container: Selection<any, any, any, any>,
                 svgDims: Dimensions, startYear: number = 2017) {
         this.currentData = migrationPatterns.data;
-        // TODO Create the data table objects
-        // TODO Need to define columns and css classes for various states and objects
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
         this.flowScale = d3.scaleLinear<number, number>().range([0, this.FLOW_RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
@@ -60,10 +58,41 @@ export class Table implements IView {
         this.yearContainer = container.append('div').classed('year', true).text(startYear);
         this.table = container.append('table');
         this.header = this.table.append('thead');
-        this.axisHeader = this.header.append('tr');
         this.titleHeader = this.header.append('tr');
-        for (const l of this.headerLabels) {
-            this.axisHeader.append('th').text(l).on('click', this.labelListener);
+        this.axisHeader = this.header.append('tr');
+        for (const l in this.headerLabels) {
+            this.titleHeader.append('th').text(this.headerLabels[l]).on('click', this.labelListener);
+            const axis = this.axisHeader.append('th').classed(`Axis${l}`, true);
+            const svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
+            if (l === '1') {
+                //@ts-ignore
+                svgAxis.append('g').attr("transform", "translate(8, 48)").call(d3.axisBottom().scale(this.flowScale).ticks(8)).selectAll('text').style("text-anchor", "end")
+                    .attr("dx", "-.5em")
+                    // .attr("dy", ".01em")
+                    .attr("transform", "rotate(90)")
+                    ;
+
+            } else if (l == '2'){
+                //@ts-ignore
+                const axis = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat((d) => {
+                    return Number.parseFloat(d) * 100 + '%';
+                });
+                svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis).selectAll('text').style("text-anchor", "end")
+                    .attr("dx", "-.5em")
+                    // .attr("dy", ".01em")
+                    .attr("transform", "rotate(90)")
+                ;
+            } else if (l == '3'){
+                //@ts-ignore
+                const axis = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat((d) => {
+                    return (Number.parseFloat(d) * 100) - 100 + '%';
+                });
+                svgAxis.append('g').attr("transform", "translate(8, 48)").call(axis).selectAll('text').style("text-anchor", "end")
+                    .attr("dx", "-.5em")
+                    // .attr("dy", ".01em")
+                    .attr("transform", "rotate(90)")
+                ;
+            }
         }
         this.tBody = this.table.append('tbody');
         this.loadTable(startYear);
@@ -114,7 +143,7 @@ export class Table implements IView {
                                     .attr('width', '100%').attr('height', 10)
                                     .append('rect').classed('popGrowth', true), year);
 
-                this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+                //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
 
             },
             update => {
@@ -128,7 +157,7 @@ export class Table implements IView {
 
                 this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
 
-                this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
+                //this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
             }
         );
 
