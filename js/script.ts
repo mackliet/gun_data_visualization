@@ -11,9 +11,6 @@ declare global {
     interface String {
         clean(): string
     }
-    interface HTMLElement {
-        value: number;
-    }
 }
 
 String.prototype.clean = function (this: string) {
@@ -72,6 +69,7 @@ slider.oninput = function() {
 };
 
 play.on('click', async () => {
+    // @ts-ignore
     slider.value = 1;
     slider.dispatchEvent(new Event('input'));
     for (let year in migrationPatterns.years) {
