@@ -19,8 +19,8 @@ String.prototype.clean = function (this: string) {
 
 const tableSelection = d3.select('.dataTable');
 const tableDims = {
-    height: 1000,
-    width: 500
+    height: 600,
+    width: 600
 };
 const geoSelection = d3.select('.geoHeat');
 const geoDims = {
@@ -30,8 +30,8 @@ const geoDims = {
 
 const scatterSelection = d3.select('.scatterplot');
 const scatterDims = {
-    height: 700,
-    width: 700
+    height: 550,
+    width: 550
 };
 
 let slider = document.getElementById("yearSlider");

@@ -14,10 +14,12 @@ export class Scatterplot implements IView
     readonly year_to_indicators: Year_to_indicators_map;
     readonly container: Selection<any, any, any, any>;
     readonly legend_div: Selection<any, any, any, any>;
+    readonly state_table_div: Selection<any, any, any, any>;
     readonly svg: Selection<any, any, any, any>;
-    readonly state_table: Selection<any, any, any, any>;
     readonly svg_dims: Dimensions;
     readonly padding: number;
+    readonly circle_radius: number;
+    readonly label_padding: number;
     readonly axes_group: Selection<any, any, any, any>;
     readonly circle_group: Selection<any, any, any, any>;
     readonly indicators: Array<string>;
@@ -38,24 +40,25 @@ export class Scatterplot implements IView
     constructor(state_data: Year_to_indicators_map, container: Selection<any, any, any, any>,
                 svg_dims: Dimensions, start_year: number = 2017) 
     {
-        container.classed('left', true);
-        const plot_div = container.append('div').classed('plot_container', true).classed('centered_container', true);
+        const plot_div = container.append('div').classed('plot_container', true);
 
         this.curYear = start_year;
         this.year_to_indicators = state_data
         this.current_year_data = this.year_to_indicators[this.curYear];
         this.container = container;
+        this.state_table_div = plot_div.append('div');
+        this.padding = 110;
+        this.circle_radius = 5;
+        this.label_padding = 50;
+        this.svg = plot_div.append('svg').attr('height', svg_dims.height-this.label_padding+10).attr('width', svg_dims.width);
         this.legend_div = plot_div.append('div');
-        this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
         this.active_year_text = this.svg.append('text');
-        this.state_table = this.legend_div.append('table').classed('state_table', true);
         this.axes_group = this.svg.append('g');
         this.circle_group = this.svg.append('g');
         this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-        this.active_x_indicator = 'total_left_per_capita';
+        this.active_x_indicator = 'personal_taxes_per_capita';
         this.active_y_indicator = 'net_immigration_flow';
         this.svg_dims = svg_dims;
-        this.padding = 110;
         this.default_transition_time = 800;
         this.year_change_transition_time = 150;
         this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
@@ -99,7 +102,7 @@ export class Scatterplot implements IView
                             .classed('legend_svg_div',true)
                             .attr('height', 200)
                             .append('svg')
-                            .attr('width', 150)
+                            .attr('width', 130)
                             .attr('height', 200)
                             .style('float', 'right');
         legend_svg.selectAll('circle')
@@ -107,14 +110,14 @@ export class Scatterplot implements IView
         .join('circle')
         .attr("cx", 10)
         .attr("cy", (d,i) => 10 + i*25) 
-        .attr("r", 7)
+        .attr("r", 5)
         .style("fill", d => this.color_map(d))
 
         legend_svg.selectAll('text')
         .data(geographic_areas)
         .join('text')
-        .attr("x", 30)
-        .attr("y", (d,i) => 10 + i*25) 
+        .attr("x", 20)
+        .attr("y", (d,i) => 11 + i*25) 
         .text(d => d)
         .attr("text-anchor", "left")
         .style("alignment-baseline", "middle")
@@ -123,16 +126,18 @@ export class Scatterplot implements IView
     create_state_table()
     {
         const that = this;
-        const thead = this.state_table.append('thead');
-        const tbody = this.state_table.append('tbody');
+        this.state_table_div.classed('dropdown_div', true);
+        this.state_table_div.append('span')
+                            .style('font-weight', 'bold')
+                            .style('text-align', 'right')
+                            .text('Select States');
+        const state_table = this.state_table_div
+            .append('div').classed('dropdown_div-content',true)
+            .append('table').classed('state_table', true);
+        const thead = state_table.append('thead');
+        const tbody = state_table.append('tbody');
 
-        tbody.attr('height', (this.svg_dims.height - 2*this.padding)/2)
-
-        thead.append('tr')
-        .selectAll('th')
-        .data(['Selected States'])
-        .join('th')
-        .text(d => d);
+        tbody.attr('height', (this.svg_dims.height - this.padding)/2)
         
         const states = getRegionStrings();
         const geographic_areas = getGeographicAreaStrings();
@@ -212,7 +217,6 @@ export class Scatterplot implements IView
         .on("change", 
         function(d)
         {
-            const geo_area_filter = region_d => that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3];
             const checkbox = this as HTMLInputElement;
             that.update_checked_states(d.col3, checkbox.checked);
 
@@ -334,7 +338,7 @@ export class Scatterplot implements IView
     {
         const padding = this.padding;
         const svg_dims = this.svg_dims;
-        const label_padding = 50;
+        const label_padding = this.label_padding;
 
         const find_extreme = 
         (indicator: string, extreme_func: typeof d3.min) =>
@@ -358,11 +362,11 @@ export class Scatterplot implements IView
         
         const x_scale = d3.scaleLinear()
                   .domain(x_domain)
-                  .range([padding, svg_dims.width-padding]);
+                  .range([padding, svg_dims.width-2*this.circle_radius]);
 
         const y_scale = d3.scaleLinear()
                   .domain(y_domain)
-                  .range([svg_dims.height - padding, padding]);
+                  .range([svg_dims.height - padding, 2*this.circle_radius]);
 
         this.axes_group.select('#x-axis')
         .attr('transform', `translate (0,${y_scale.range()[0]})`)
@@ -433,7 +437,7 @@ export class Scatterplot implements IView
 
         this.circle_selection
         .transition()
-        .attr('r', 5)
+        .attr('r', this.circle_radius)
         .attr('cx', d => this.x_scale(d[this.active_x_indicator]))
         .attr('cy', d => this.y_scale(d[this.active_y_indicator]))
         .duration(transition_time);

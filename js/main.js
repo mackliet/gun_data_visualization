@@ -238,6 +238,7 @@
             this.GROWTH_RECT_WIDTH = 75;
             this.MIGRATION_RECT_WIDTH = 75;
             this.POP_RECT_WIDTH = 150;
+            this.column_widths = [135, 110, 110, 110, 65];
             this.currentData = migrationPatterns.data;
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
             this.flowScale = d3.scaleLinear().range([0, this.FLOW_RECT_WIDTH])
@@ -246,8 +247,7 @@
                 .domain([-.1, .04]);
             this.growthScale = d3.scaleLinear().range([0, this.GROWTH_RECT_WIDTH])
                 .domain([.94, 1.03]);
-            this.yearContainer = container.append('div').classed('year', true).text(startYear);
-            this.table = container.append('table');
+            this.table = container.append('table').classed('stat_table', true).style('width', svgDims.width + "px");
             this.header = this.table.append('thead');
             this.titleHeader = this.header.append('tr');
             this.axisHeader = this.header.append('tr');
@@ -275,17 +275,9 @@
                     this.addAxis(svgAxis, axis_3, 15);
                 }
             }
-            this.tBody = this.table.append('tbody');
+            this.tBody = this.table.append('tbody').style('height', svgDims.height + "px");
             this.loadTable(startYear);
         }
-        Table.prototype.addAxis = function (el, axis, x) {
-            if (x === void 0) { x = 8; }
-            //@ts-ignore
-            el.append('g').attr("transform", "translate(" + x + ", 48)").call(axis).selectAll('text').style("text-anchor", "end")
-                .attr("dx", "-.5em")
-                // .attr("dy", ".01em")
-                .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
-        };
         /**
          * Class to refresh the data table for sorting, brush, or selections
          */
@@ -325,6 +317,8 @@
                     .attr('width', '100%').attr('height', 10)
                     .append('rect').classed('popGrowth', true), year);
                 //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+                _this.table.selectAll('tr').selectAll('td').data(_this.column_widths).attr('width', function (d) { return d; });
+                _this.table.selectAll('tr').selectAll('th').data(_this.column_widths).attr('width', function (d) { return d; });
             }, function (update) {
                 update = update.transition();
                 _this.net(update.selectAll('rect').filter('.net'), year);
@@ -487,11 +481,18 @@
                 return d.totalPopulation;
             });
         };
+        Table.prototype.addAxis = function (el, axis, x) {
+            if (x === void 0) { x = 8; }
+            //@ts-ignore
+            el.append('g').attr("transform", "translate(" + x + ", 48)").call(axis).selectAll('text').style("text-anchor", "end")
+                .attr("dx", "-.5em")
+                // .attr("dy", ".01em")
+                .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
+        };
         Table.prototype.labelListener = function (l) {
             console.debug("Clicked " + l + " header");
         };
         Table.prototype.changeYear = function (year) {
-            this.yearContainer.text(year);
             this.curYear = year;
             this.loadTable(year);
         };
@@ -877,23 +878,24 @@
     var Scatterplot = /** @class */ (function () {
         function Scatterplot(state_data, container, svg_dims, start_year) {
             if (start_year === void 0) { start_year = 2017; }
-            container.classed('left', true);
-            var plot_div = container.append('div').classed('plot_container', true).classed('centered_container', true);
+            var plot_div = container.append('div').classed('plot_container', true);
             this.curYear = start_year;
             this.year_to_indicators = state_data;
             this.current_year_data = this.year_to_indicators[this.curYear];
             this.container = container;
+            this.state_table_div = plot_div.append('div');
+            this.padding = 110;
+            this.circle_radius = 5;
+            this.label_padding = 50;
+            this.svg = plot_div.append('svg').attr('height', svg_dims.height - this.label_padding + 10).attr('width', svg_dims.width);
             this.legend_div = plot_div.append('div');
-            this.svg = plot_div.append('svg').attr('height', svg_dims.height).attr('width', svg_dims.width);
             this.active_year_text = this.svg.append('text');
-            this.state_table = this.legend_div.append('table').classed('state_table', true);
             this.axes_group = this.svg.append('g');
             this.circle_group = this.svg.append('g');
             this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
-            this.active_x_indicator = 'total_left_per_capita';
+            this.active_x_indicator = 'personal_taxes_per_capita';
             this.active_y_indicator = 'net_immigration_flow';
             this.svg_dims = svg_dims;
-            this.padding = 110;
             this.default_transition_time = 800;
             this.year_change_transition_time = 150;
             this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
@@ -930,7 +932,7 @@
                 .classed('legend_svg_div', true)
                 .attr('height', 200)
                 .append('svg')
-                .attr('width', 150)
+                .attr('width', 130)
                 .attr('height', 200)
                 .style('float', 'right');
             legend_svg.selectAll('circle')
@@ -938,13 +940,13 @@
                 .join('circle')
                 .attr("cx", 10)
                 .attr("cy", function (d, i) { return 10 + i * 25; })
-                .attr("r", 7)
+                .attr("r", 5)
                 .style("fill", function (d) { return _this.color_map(d); });
             legend_svg.selectAll('text')
                 .data(geographic_areas)
                 .join('text')
-                .attr("x", 30)
-                .attr("y", function (d, i) { return 10 + i * 25; })
+                .attr("x", 20)
+                .attr("y", function (d, i) { return 11 + i * 25; })
                 .text(function (d) { return d; })
                 .attr("text-anchor", "left")
                 .style("alignment-baseline", "middle");
@@ -952,14 +954,17 @@
         Scatterplot.prototype.create_state_table = function () {
             var _this = this;
             var that = this;
-            var thead = this.state_table.append('thead');
-            var tbody = this.state_table.append('tbody');
-            tbody.attr('height', (this.svg_dims.height - 2 * this.padding) / 2);
-            thead.append('tr')
-                .selectAll('th')
-                .data(['Selected States'])
-                .join('th')
-                .text(function (d) { return d; });
+            this.state_table_div.classed('dropdown_div', true);
+            this.state_table_div.append('span')
+                .style('font-weight', 'bold')
+                .style('text-align', 'right')
+                .text('Select States');
+            var state_table = this.state_table_div
+                .append('div').classed('dropdown_div-content', true)
+                .append('table').classed('state_table', true);
+            var thead = state_table.append('thead');
+            var tbody = state_table.append('tbody');
+            tbody.attr('height', (this.svg_dims.height - this.padding) / 2);
             var states = getRegionStrings();
             var geographic_areas = getGeographicAreaStrings();
             var all_arr = ['All'];
@@ -1105,7 +1110,7 @@
             var _this = this;
             var padding = this.padding;
             var svg_dims = this.svg_dims;
-            var label_padding = 50;
+            var label_padding = this.label_padding;
             var find_extreme = function (indicator, extreme_func) {
                 var extreme_val = null;
                 for (var year in _this.year_to_indicators) {
@@ -1123,10 +1128,10 @@
                 find_extreme(this.active_y_indicator, d3.max)];
             var x_scale = d3.scaleLinear()
                 .domain(x_domain)
-                .range([padding, svg_dims.width - padding]);
+                .range([padding, svg_dims.width - 2 * this.circle_radius]);
             var y_scale = d3.scaleLinear()
                 .domain(y_domain)
-                .range([svg_dims.height - padding, padding]);
+                .range([svg_dims.height - padding, 2 * this.circle_radius]);
             this.axes_group.select('#x-axis')
                 .attr('transform', "translate (0," + y_scale.range()[0] + ")")
                 .transition()
@@ -1181,7 +1186,7 @@
                 });
             this.circle_selection
                 .transition()
-                .attr('r', 5)
+                .attr('r', this.circle_radius)
                 .attr('cx', function (d) { return _this.x_scale(d[_this.active_x_indicator]); })
                 .attr('cy', function (d) { return _this.y_scale(d[_this.active_y_indicator]); })
                 .duration(transition_time);
@@ -1190,10 +1195,11 @@
     }());
 
     var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
             function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
             function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
             step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
     };
@@ -1224,14 +1230,13 @@
             if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
         }
     };
-    var _this = undefined;
     String.prototype.clean = function () {
         return this.replace(/\s|%/g, "_");
     };
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
-        height: 1000,
-        width: 500
+        height: 600,
+        width: 600
     };
     var geoSelection = d3.select('.geoHeat');
     var geoDims = {
@@ -1240,8 +1245,8 @@
     };
     var scatterSelection = d3.select('.scatterplot');
     var scatterDims = {
-        height: 700,
-        width: 700
+        height: 550,
+        width: 550
     };
     var slider = document.getElementById("yearSlider");
     var play = d3.select(".play");
@@ -1275,7 +1280,7 @@
         }
     };
     var clickNum = 0;
-    play.on('click', function () { return __awaiter(_this, void 0, void 0, function () {
+    play.on('click', function () { return __awaiter(void 0, void 0, void 0, function () {
         var current, _a, _b, _i, year, t;
         return __generator(this, function (_c) {
             switch (_c.label) {
