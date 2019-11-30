@@ -68,13 +68,20 @@ slider.oninput = function() {
     }
 };
 
+let clickNum = 0;
+
 play.on('click', async () => {
+    clickNum += 1;
+    const current = clickNum;
     // @ts-ignore
     slider.value = 1;
     slider.dispatchEvent(new Event('input'));
     for (let year in migrationPatterns.years) {
         const t = (Number.parseInt(year) + 1) * 1000;
         await setTimeout(() => {
+            if (clickNum !== current) {
+                return;
+            }
             //@ts-ignore
             slider.stepUp();
             slider.dispatchEvent(new Event('input'));

@@ -230,7 +230,7 @@
         function Table(migrationPatterns, container, svgDims, startYear) {
             if (startYear === void 0) { startYear = 2017; }
             // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-            this.headerLabels = ['Region', 'Total Flow', 'Flow %', 'Pop. Growth %', 'Population'];
+            this.headerLabels = ['Region', 'Total Flow', 'Pop. Flow', 'Pop. Growth']; //, 'Population'];
             /**
              * Table constants
              */
@@ -239,8 +239,6 @@
             this.MIGRATION_RECT_WIDTH = 75;
             this.POP_RECT_WIDTH = 150;
             this.currentData = migrationPatterns.data;
-            // TODO Create the data table objects
-            // TODO Need to define columns and css classes for various states and objects
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
             this.flowScale = d3.scaleLinear().range([0, this.FLOW_RECT_WIDTH])
                 .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
@@ -251,15 +249,43 @@
             this.yearContainer = container.append('div').classed('year', true).text(startYear);
             this.table = container.append('table');
             this.header = this.table.append('thead');
-            this.axisHeader = this.header.append('tr');
             this.titleHeader = this.header.append('tr');
-            for (var _i = 0, _a = this.headerLabels; _i < _a.length; _i++) {
-                var l = _a[_i];
-                this.axisHeader.append('th').text(l).on('click', this.labelListener);
+            this.axisHeader = this.header.append('tr');
+            for (var l in this.headerLabels) {
+                this.titleHeader.append('th').text(this.headerLabels[l]).on('click', this.labelListener);
+                var axis = this.axisHeader.append('th').classed("Axis" + l, true);
+                var svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
+                if (l === '1') {
+                    //@ts-ignore
+                    var axis_1 = d3.axisBottom().scale(this.flowScale).ticks(8);
+                    this.addAxis(svgAxis, axis_1);
+                }
+                else if (l == '2') {
+                    //@ts-ignore
+                    var axis_2 = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat(function (d) {
+                        return Number.parseFloat(d) * 100 + '%';
+                    });
+                    this.addAxis(svgAxis, axis_2);
+                }
+                else if (l == '3') {
+                    //@ts-ignore
+                    var axis_3 = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat(function (d) {
+                        return (Number.parseFloat(d) * 100) - 100 + '%';
+                    });
+                    this.addAxis(svgAxis, axis_3, 15);
+                }
             }
             this.tBody = this.table.append('tbody');
             this.loadTable(startYear);
         }
+        Table.prototype.addAxis = function (el, axis, x) {
+            if (x === void 0) { x = 8; }
+            //@ts-ignore
+            el.append('g').attr("transform", "translate(" + x + ", 48)").call(axis).selectAll('text').style("text-anchor", "end")
+                .attr("dx", "-.5em")
+                // .attr("dy", ".01em")
+                .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
+        };
         /**
          * Class to refresh the data table for sorting, brush, or selections
          */
@@ -298,7 +324,7 @@
                 _this.popGrowth(rows.append('td').attr('width', _this.GROWTH_RECT_WIDTH).append('svg')
                     .attr('width', '100%').attr('height', 10)
                     .append('rect').classed('popGrowth', true), year);
-                _this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+                //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
             }, function (update) {
                 update = update.transition();
                 _this.net(update.selectAll('rect').filter('.net'), year);
@@ -306,7 +332,7 @@
                 _this.out(update.selectAll('rect').filter('.out'), year);
                 _this.pop(update.selectAll('rect').filter('.pop'), year);
                 _this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
-                _this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year);
+                //this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
             });
         };
         /**
@@ -1248,11 +1274,15 @@
             obj.changeYear(curYear);
         }
     };
+    var clickNum = 0;
     play.on('click', function () { return __awaiter(_this, void 0, void 0, function () {
-        var _a, _b, _i, year, t;
+        var current, _a, _b, _i, year, t;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
+                    clickNum += 1;
+                    current = clickNum;
+                    // @ts-ignore
                     slider.value = 1;
                     slider.dispatchEvent(new Event('input'));
                     _a = [];
@@ -1265,6 +1295,9 @@
                     year = _a[_i];
                     t = (Number.parseInt(year) + 1) * 1000;
                     return [4 /*yield*/, setTimeout(function () {
+                            if (clickNum !== current) {
+                                return;
+                            }
                             //@ts-ignore
                             slider.stepUp();
                             slider.dispatchEvent(new Event('input'));
