@@ -7,13 +7,15 @@ import {IView} from "./IView";
 import * as d3 from "d3";
 import { thisTypeAnnotation } from "@babel/types";
 
-
+type sortFuncType = (a: MigrationNode, b: MigrationNode, year: number) => number;
 export class Table implements IView {
 
     /*
         Table state variables
      */
-    private readonly lastSorted: string;
+    private lastSorted: string;
+    private sortOrder: number;
+    private sortFunctions: d3.ScaleOrdinal<string, sortFuncType>;
 
     private readonly parentSvg: Selection<any, any, any, any>;
     private readonly table: Selection<any, MigrationNode, any, MigrationNode>;
@@ -49,7 +51,8 @@ export class Table implements IView {
      */
     constructor(migrationPatterns: MigrationPatterns, container: Selection<any, any, any, any>,
                 svgDims: Dimensions, startYear: number = 2017) {
-        this.currentData = migrationPatterns.data;
+        this.currentData = JSON.parse(JSON.stringify(migrationPatterns.data)); // Make deep copy. Sorting was screwing up heat map
+        this.curYear = startYear;
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
         this.flowScale = d3.scaleLinear<number, number>().range([5, this.FLOW_RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
@@ -60,9 +63,29 @@ export class Table implements IView {
         this.table = container.append('table').classed('stat_table', true).style('height', `${svgDims.height}px`).style('width', `${svgDims.width}px`);
         this.header = this.table.append('thead');
         this.titleHeader = this.header.append('tr');
-        this.axisHeader = this.header.append('tr');    
-        for (const [header, index] of this.headerLabels.map((v,i) => [v,i])) {
-            this.titleHeader.append('th').style('top', '0px').text(header).on('click', this.labelListener);
+        this.axisHeader = this.header.append('tr');
+        this.lastSorted = null;
+        this.sortOrder = 1;
+        const sortFunctions: Array<sortFuncType>
+                            = [(a,b, _) => a.nodeId - b.nodeId, 
+                              (a,b, _) => a.GDPPerCapita - b.GDPPerCapita,
+                              (a,b, _) => a.netImmigrationFlow - b.netImmigrationFlow,
+                              (a,b, _) => a.netImmigrationFlow/a.totalPopulation - b.netImmigrationFlow/b.totalPopulation,
+                              (a,b, year) => {
+                                if((year-1) in this.currentData)
+                                    return a.totalPopulation / this.currentData[year - 1][a.nodeId].totalPopulation
+                                         - b.totalPopulation / this.currentData[year - 1][b.nodeId].totalPopulation;
+                                return 0;
+                              },
+                              (a,b, _) => a.totalPopulation - b.totalPopulation];   
+        this.sortFunctions = d3.scaleOrdinal<string, sortFuncType>()
+                               .domain(this.headerLabels)
+                               .range(sortFunctions);
+                
+        for (const [header, index] of this.headerLabels.map((v:string,i:number) => [v,i])) {
+            this.titleHeader.append('th').style('top', '0px')
+            .text(header).classed('table_header', true)
+            .on('click', () => this.labelListener(header as string));
             const axis = this.axisHeader.append('th').classed(`Axis${index}`, true)
             const svgAxis = axis.append('svg').attr('height', 60);
             if (index === 2) {
@@ -104,7 +127,8 @@ export class Table implements IView {
             enter => {
                 const rows = enter.append('tr');
 
-                rows.append('td').style('text-align', 'left').append('text').text((d) => {
+                rows.append('td').style('text-align', 'left').classed('region_name', true)
+                    .append('text').text((d) => {
                     return RegionEnum[d.nodeId];
                 });
 
@@ -153,6 +177,7 @@ export class Table implements IView {
             },
             update => {
                 update = update.transition();
+                
                 this.net(update.selectAll('rect').filter('.net'), year);
                 this.in(update.selectAll('rect').filter('.in'), year);
                 this.out(update.selectAll('rect').filter('.out'), year);
@@ -162,9 +187,19 @@ export class Table implements IView {
                 this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
                 this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
                 update.selectAll('td').filter('.gdp').select('text').text(d => this.currentData[year][d.nodeId].GDPPerCapita);
+                this.region(update.selectAll('td').filter('.region_name').select('text'), year);
             }
         );
 
+    }
+
+    /**
+     *
+     * @param join selection for updating/creating attributes
+     * @param year current year for the view
+     */
+    region(join, year) {
+        join.text(d => RegionEnum[this.currentData[year][d.nodeId].nodeId])
     }
 
     /**
@@ -324,8 +359,17 @@ export class Table implements IView {
             .attr("transform", `translate(${-x + 8}, 0) rotate(90)`)
     }
 
-    labelListener(l) {
-        console.debug(`Clicked ${l} header`);
+    labelListener(l: string) {
+        console.log(l)
+        if(this.lastSorted !== l)
+        {
+            this.sortOrder = 1;
+        }
+        const sortFunction = (a,b) => this.sortOrder * this.sortFunctions(l)(a,b,this.curYear);
+        this.currentData[this.curYear].sort(sortFunction);
+        this.loadTable(this.curYear);
+        this.lastSorted = l;
+        this.sortOrder *= -1
     }
 
     changeYear(year: number) {

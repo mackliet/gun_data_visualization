@@ -229,6 +229,7 @@
          * @param startYear year to start the visualization
          */
         function Table(migrationPatterns, container, svgDims, startYear) {
+            var _this = this;
             if (startYear === void 0) { startYear = 2017; }
             // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
             this.headerLabels = ['Region', 'GDP per Capita', 'Total Flow', 'Pop. Flow', 'Pop. Growth', 'Population'];
@@ -240,7 +241,8 @@
             this.MIGRATION_RECT_WIDTH = 75;
             this.POP_RECT_WIDTH = 150;
             this.column_widths = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65];
-            this.currentData = migrationPatterns.data;
+            this.currentData = JSON.parse(JSON.stringify(migrationPatterns.data)); // Make deep copy. Sorting was screwing up heat map
+            this.curYear = startYear;
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
             this.flowScale = d3.scaleLinear().range([5, this.FLOW_RECT_WIDTH])
                 .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
@@ -252,30 +254,52 @@
             this.header = this.table.append('thead');
             this.titleHeader = this.header.append('tr');
             this.axisHeader = this.header.append('tr');
-            for (var _i = 0, _a = this.headerLabels.map(function (v, i) { return [v, i]; }); _i < _a.length; _i++) {
-                var _b = _a[_i], header = _b[0], index = _b[1];
-                this.titleHeader.append('th').style('top', '0px').text(header).on('click', this.labelListener);
-                var axis = this.axisHeader.append('th').classed("Axis" + index, true);
+            this.lastSorted = null;
+            this.sortOrder = 1;
+            var sortFunctions = [function (a, b, _) { return a.nodeId - b.nodeId; },
+                function (a, b, _) { return a.GDPPerCapita - b.GDPPerCapita; },
+                function (a, b, _) { return a.netImmigrationFlow - b.netImmigrationFlow; },
+                function (a, b, _) { return a.netImmigrationFlow / a.totalPopulation - b.netImmigrationFlow / b.totalPopulation; },
+                function (a, b, year) {
+                    if ((year - 1) in _this.currentData)
+                        return a.totalPopulation / _this.currentData[year - 1][a.nodeId].totalPopulation
+                            - b.totalPopulation / _this.currentData[year - 1][b.nodeId].totalPopulation;
+                    return 0;
+                },
+                function (a, b, _) { return a.totalPopulation - b.totalPopulation; }];
+            this.sortFunctions = d3.scaleOrdinal()
+                .domain(this.headerLabels)
+                .range(sortFunctions);
+            var _loop_1 = function (header, index) {
+                this_1.titleHeader.append('th').style('top', '0px')
+                    .text(header).classed('table_header', true)
+                    .on('click', function () { return _this.labelListener(header); });
+                var axis = this_1.axisHeader.append('th').classed("Axis" + index, true);
                 var svgAxis = axis.append('svg').attr('height', 60);
                 if (index === 2) {
                     //@ts-ignore
-                    var axis_1 = d3.axisBottom().scale(this.flowScale).ticks(8);
-                    this.addAxis(svgAxis, axis_1);
+                    var axis_1 = d3.axisBottom().scale(this_1.flowScale).ticks(8);
+                    this_1.addAxis(svgAxis, axis_1);
                 }
                 else if (index === 3) {
                     //@ts-ignore
-                    var axis_2 = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat(function (d) {
+                    var axis_2 = d3.axisBottom().scale(this_1.migrationScale).ticks(5).tickFormat(function (d) {
                         return Number.parseFloat(d) * 100 + '%';
                     });
-                    this.addAxis(svgAxis, axis_2);
+                    this_1.addAxis(svgAxis, axis_2);
                 }
                 else if (index === 4) {
                     //@ts-ignore
-                    var axis_3 = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat(function (d) {
+                    var axis_3 = d3.axisBottom().scale(this_1.growthScale).ticks(5).tickFormat(function (d) {
                         return (Number.parseFloat(d) * 100) - 100 + '%';
                     });
-                    this.addAxis(svgAxis, axis_3, 15);
+                    this_1.addAxis(svgAxis, axis_3, 15);
                 }
+            };
+            var this_1 = this;
+            for (var _i = 0, _a = this.headerLabels.map(function (v, i) { return [v, i]; }); _i < _a.length; _i++) {
+                var _b = _a[_i], header = _b[0], index = _b[1];
+                _loop_1(header, index);
             }
             var rowHeight = this.titleHeader.node().getBoundingClientRect().height;
             this.axisHeader.selectAll('th').style('top', rowHeight + "px");
@@ -294,7 +318,8 @@
                 return e.nodeId;
             }).join(function (enter) {
                 var rows = enter.append('tr');
-                rows.append('td').style('text-align', 'left').append('text').text(function (d) {
+                rows.append('td').style('text-align', 'left').classed('region_name', true)
+                    .append('text').text(function (d) {
                     return RegionEnum[d.nodeId];
                 });
                 rows.append('td').classed('gdp', true).append('text').text(function (d) {
@@ -339,7 +364,17 @@
                 _this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
                 _this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year);
                 update.selectAll('td').filter('.gdp').select('text').text(function (d) { return _this.currentData[year][d.nodeId].GDPPerCapita; });
+                _this.region(update.selectAll('td').filter('.region_name').select('text'), year);
             });
+        };
+        /**
+         *
+         * @param join selection for updating/creating attributes
+         * @param year current year for the view
+         */
+        Table.prototype.region = function (join, year) {
+            var _this = this;
+            join.text(function (d) { return RegionEnum[_this.currentData[year][d.nodeId].nodeId]; });
         };
         /**
          *
@@ -502,7 +537,16 @@
                 .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
         };
         Table.prototype.labelListener = function (l) {
-            console.debug("Clicked " + l + " header");
+            var _this = this;
+            console.log(l);
+            if (this.lastSorted !== l) {
+                this.sortOrder = 1;
+            }
+            var sortFunction = function (a, b) { return _this.sortOrder * _this.sortFunctions(l)(a, b, _this.curYear); };
+            this.currentData[this.curYear].sort(sortFunction);
+            this.loadTable(this.curYear);
+            this.lastSorted = l;
+            this.sortOrder *= -1;
         };
         Table.prototype.changeYear = function (year) {
             this.curYear = year;
@@ -551,7 +595,13 @@
         var tooltip_x = x + tooltip_width > svg_width
             ? svg_width - tooltip_width - 2 * padding
             : x;
-        var _b = d3.mouse(svg.node()), _ = _b[0], mouseY = _b[1];
+        var mouseY = y;
+        try {
+            mouseY = d3.mouse(svg.node())[1];
+        }
+        catch (_b) {
+            mouseY = y;
+        }
         var tooltip_y = y == mouseY ? (y + 2) : y;
         tooltip.attr('transform', "translate (" + tooltip_x + " " + tooltip_y + ")");
     }
@@ -585,6 +635,9 @@
     function removeTooltip(svg) {
         svg.select('.tooltip-group').remove();
     }
+    function removeAllTooltips(svg) {
+        svg.selectAll('.tooltip-group').remove();
+    }
 
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
@@ -609,6 +662,7 @@
                  * Adapted from https://bl.ocks.org/mbostock/4090848
                  */
                 _this.g = _this.svg.append('g');
+                _this.features = topojson.feature(_this.us, _this.us.objects.states).features;
                 _this.drawMap(null);
                 // Borders
                 _this.svg.append("path")
@@ -618,6 +672,20 @@
                 })));
             });
         }
+        HeatMap.prototype.setHighlightCallback = function (callback) {
+            this.highlightCallback = callback;
+        };
+        HeatMap.prototype.setClearCallback = function (callback) {
+            this.clearCallback = callback;
+        };
+        HeatMap.prototype.highlightState = function (state) {
+            this.focusNode(this.features.find(function (d) { return d.properties.name == state; }));
+            var highlighted = this.currentRegion !== null;
+            return highlighted;
+        };
+        HeatMap.prototype.clearHighlightedState = function () {
+            this.focusNode(this.currentData[this.curYear]["" + this.currentRegion]);
+        };
         HeatMap.prototype.drawMap = function (stateSelected) {
             var _this = this;
             this.currentRegion = stateSelected;
@@ -626,7 +694,7 @@
             // States
             this.dataSelection = this.g.selectAll('path')
                 //@ts-ignore
-                .data(topojson.feature(this.us, this.us.objects.states).features);
+                .data(this.features);
             var enter = this.dataSelection.enter()
                 .append('path').attr('d', this.path).attr("class", "states")
                 .attr('id', function (d) {
@@ -649,7 +717,7 @@
                 removeTooltip(_this.svg);
                 var id = stateId(d.properties.name);
                 d3.select("#" + id).style('fill', _this.stateFill(d, _this.currentRegion));
-            }).on('click', function (d) { return _this.focusNode(d); });
+            }).on('click', function (d) { return _this.highlightCallback(d.properties.name); });
             this.dataSelection.merge(enter).transition().style('fill', function (d) {
                 return _this.stateFill(d, stateSelected);
             });
@@ -910,6 +978,7 @@
             this.default_transition_time = 800;
             this.year_change_transition_time = 150;
             this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
+            this.highlightedState = null;
             this.state_to_geo_area = {};
             for (var _i = 0, _a = this.current_year_data; _i < _a.length; _i++) {
                 var state = _a[_i];
@@ -923,6 +992,26 @@
         Scatterplot.indicator_to_name = function (indicator) {
             var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
             return no_underscores[0].toUpperCase() + no_underscores.slice(1);
+        };
+        Scatterplot.prototype.setHighlightCallback = function (callback) {
+            this.highlightCallback = callback;
+        };
+        Scatterplot.prototype.setClearCallback = function (callback) {
+            this.clearCallback = callback;
+        };
+        Scatterplot.prototype.highlightState = function (state) {
+            var that = this;
+            this.highlightedState = state;
+            this.circle_group.selectAll('circle').filter(function (d) {
+                return d.state === state;
+            }).each(function (d) {
+                that.createTooltip(d, d3.select(this));
+            });
+        };
+        Scatterplot.prototype.clearHighlightedState = function () {
+            this.highlightedState = null;
+            this.circle_group.selectAll('circle').classed('hovered', false);
+            removeAllTooltips(this.svg);
         };
         // Currently not used. Can use if we want to, but this data
         // is now in the state selection table
@@ -1157,6 +1246,30 @@
         Scatterplot.prototype.update_plot = function () {
             this.update_plot_with_time(this.default_transition_time);
         };
+        Scatterplot.prototype.createTooltip = function (d, circle) {
+            circle.classed('hovered', true);
+            var is_float = function (num) { return num % 1 !== 0; };
+            var x_val = d[this.active_x_indicator];
+            var y_val = d[this.active_y_indicator];
+            var lines = ["" + d.state,
+                Scatterplot.indicator_to_name(this.active_x_indicator) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
+                Scatterplot.indicator_to_name(this.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
+            var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+            var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+            createTooltip(this.svg, [x, y], lines);
+        };
+        Scatterplot.prototype.updateTooltip = function (d, circle) {
+            circle.classed('hovered', true);
+            var is_float = function (num) { return num % 1 !== 0; };
+            var x_val = d[this.active_x_indicator];
+            var y_val = d[this.active_y_indicator];
+            var lines = ["" + d.state,
+                Scatterplot.indicator_to_name(this.active_x_indicator) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
+                Scatterplot.indicator_to_name(this.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
+            var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+            var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+            updateTooltip(this.svg, [x, y], lines);
+        };
         Scatterplot.prototype.update_plot_with_time = function (transition_time) {
             var _this = this;
             this.update_scales_with_time(transition_time);
@@ -1169,28 +1282,31 @@
                     .attr('fill', function (d) { return _this.color_map("" + d.geographic_area); })
                     .classed('unselected', function (d) { return !_this.region_column.filter(function (row_d) { return "" + d.state == "" + row_d.col3; }).select('input').node().checked; })
                     .on('mouseover', function (d) {
-                    var circle = d3.select(this);
-                    circle.classed('hovered', true);
-                    var is_float = function (num) { return num % 1 !== 0; };
-                    var x_val = d[that.active_x_indicator];
-                    var y_val = d[that.active_y_indicator];
-                    var lines = ["" + d.state,
-                        Scatterplot.indicator_to_name(that.active_x_indicator) + ": " + (is_float(x_val) ? x_val.toFixed(4) : x_val),
-                        Scatterplot.indicator_to_name(that.active_y_indicator) + ": " + (is_float(y_val) ? y_val.toFixed(4) : y_val)];
-                    var x = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
-                    var y = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-                    createTooltip(that.svg, [x, y], lines);
+                    if (that.highlightedState === null) {
+                        console.log('Called!');
+                        var circle = d3.select(this);
+                        that.createTooltip(d, circle);
+                    }
                 })
                     .on('mouseout', function (d) {
-                    d3.select(this).classed('hovered', false);
-                    removeTooltip(that.svg);
+                    if (that.highlightedState === null) {
+                        that.clearHighlightedState();
+                    }
+                })
+                    .on('click', function (d) {
+                    _this.highlightCallback(d.state);
                 });
             this.circle_selection
                 .transition()
                 .attr('r', this.circle_radius)
                 .attr('cx', function (d) { return _this.x_scale(d[_this.active_x_indicator]); })
                 .attr('cy', function (d) { return _this.y_scale(d[_this.active_y_indicator]); })
-                .duration(transition_time);
+                .duration(transition_time)
+                .on('end', function (d) {
+                if (that.highlightedState !== null && d.state === that.highlightedState) {
+                    that.updateTooltip(d, d3.select(this));
+                }
+            });
         };
         return Scatterplot;
     }());
@@ -1262,6 +1378,20 @@
         geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
         scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
         d3.select('.activeYear').text('2017');
+        var clearHighlight = function () {
+            scatter.clearHighlightedState();
+            geo.clearHighlightedState();
+        };
+        var highlight = function (state) {
+            scatter.clearHighlightedState();
+            if (geo.highlightState(state)) {
+                scatter.highlightState(state);
+            }
+        };
+        scatter.setHighlightCallback(highlight);
+        geo.setHighlightCallback(highlight);
+        scatter.setClearCallback(clearHighlight);
+        geo.setClearCallback(clearHighlight);
         // Couldn't figure out how to do this in CSS...hacky JS fix
         var container = d3.select('.container');
         var visualizationWidth = container.select('.view').node().getBoundingClientRect().width;

@@ -53,7 +53,16 @@ function placeTooltip(svg: Selection<any, any, any, any>,
     const tooltip_x = x + tooltip_width > svg_width
                     ? svg_width - tooltip_width - 2*padding
                     : x
-    const [_, mouseY] = d3.mouse(svg.node());
+                    
+    let mouseY = y;
+    try
+    {
+        mouseY = d3.mouse(svg.node())[1];
+    }
+    catch
+    {
+        mouseY = y
+    }
     const tooltip_y = y == mouseY ? (y+2) : y;
     tooltip.attr('transform', `translate (${tooltip_x} ${tooltip_y})`);
 }
@@ -97,4 +106,9 @@ export function updateTooltip(svg: Selection<any, any, any, any>, [x,y]: [number
 export function removeTooltip(svg: Selection<any, any, any, any>)
 {
     svg.select('.tooltip-group').remove();
+}
+
+export function removeAllTooltips(svg: Selection<any, any, any, any>)
+{
+    svg.selectAll('.tooltip-group').remove();
 }
