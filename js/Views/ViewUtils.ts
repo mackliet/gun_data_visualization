@@ -4,7 +4,10 @@ import {Selection} from 'd3-selection';
 export enum ViewState {
     net = 'net',
     out = 'out',
-    in = 'in'
+    in = 'in',
+    growth = 'growth',
+    flow = 'flow',
+    gdp = 'gdp'
 }
 
 function getTooltipPadding()

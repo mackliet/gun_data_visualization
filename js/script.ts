@@ -46,16 +46,16 @@ var migrationPatterns: MigrationPatterns;
 
 d3.json('data/migration_and_economic_data.json').then((data) => {
     migrationPatterns = new MigrationPatterns(data);
-    table = new Table(migrationPatterns, tableSelection, tableDims);
     geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+    table = new Table(migrationPatterns, tableSelection, tableDims, geo);
     scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
-    d3.select('.activeYear').text('2017')
+    d3.select('.activeYear').text('2017');
 
     const clearHighlight = () =>
     {
         scatter.clearHighlightedState();
         geo.clearHighlightedState();
-    }
+    };
 
     const highlight = (state: RegionEnum) =>
     {
@@ -64,9 +64,8 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
         {
             scatter.highlightState(state);
         }
-    }
+    };
 
-    
     scatter.setHighlightCallback(highlight);
     geo.setHighlightCallback(highlight);
 
@@ -77,12 +76,9 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     const visualizationWidth = (container.select('.view').node() as HTMLElement).getBoundingClientRect().width;
     const containerWidth = (container.node() as HTMLElement).getBoundingClientRect().width;
     container.style('padding-left', `${(containerWidth-visualizationWidth)/2}px`).classed('hidden', false);
-    // TODO Chord Diagram Integration
-    // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
 });
 
 // Bind year event to various views
-// TODO Bind to scatterplot and table
 slider.oninput = function() {
     //@ts-ignore
     const minYear = Math.min(...migrationPatterns.years);
