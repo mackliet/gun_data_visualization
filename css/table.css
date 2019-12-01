@@ -7,6 +7,12 @@ table.stat_table {
     overflow: auto;
     text-align: center;
 }
+
+th.table_header
+{
+    cursor: s-resize;
+}
+
 .stat_table thead tr{
     width: 100%;
 }

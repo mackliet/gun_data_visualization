@@ -30,6 +30,9 @@ export class HeatMap implements IView {
     private dataSelection;
     private us;
     private g: Selection<any, any, any, any>;
+    private features: Array<Feature>;
+    highlightCallback: (RegionEnum) => void;
+    clearCallback: () => void;
 
 
     constructor(patterns: MigrationPatterns, container: Selection<any, any, any, any>,
@@ -48,6 +51,7 @@ export class HeatMap implements IView {
              * Adapted from https://bl.ocks.org/mbostock/4090848
              */
             this.g = this.svg.append('g');
+            this.features = (topojson.feature(this.us,  this.us.objects.states )as any).features;
             this.drawMap(null);
             // Borders
             this.svg.append("path")
@@ -59,6 +63,28 @@ export class HeatMap implements IView {
 
     }
 
+    setHighlightCallback(callback: (RegionEnum)=>void)
+    {
+        this.highlightCallback = callback;
+    }
+
+    setClearCallback(callback: ()=>void)
+    {
+        this.clearCallback = callback;
+    }
+
+    highlightState(state: RegionEnum)
+    {
+        this.focusNode(this.features.find(d => d.properties.name == state));
+        const highlighted = this.currentRegion !== null;
+        return highlighted;
+    }
+
+    clearHighlightedState()
+    {
+        this.focusNode(this.currentData[this.curYear][`${this.currentRegion}`]);
+    }
+
     drawMap(stateSelected: RegionEnum) {
         this.currentRegion = stateSelected;
         this.setColorScale();
@@ -66,7 +92,7 @@ export class HeatMap implements IView {
         // States
         this.dataSelection = this.g.selectAll('path')
         //@ts-ignore
-            .data<Feature>(topojson.feature(this.us,  this.us.objects.states ).features);
+            .data<Feature>(this.features);
         const enter = this.dataSelection.enter()
             .append('path').attr('d', this.path).attr("class", "states")
             .attr('id', (d) => {
@@ -90,7 +116,7 @@ export class HeatMap implements IView {
                 removeTooltip(this.svg);
             const id = stateId(d.properties.name);
             d3.select(`#${id}`).style('fill', this.stateFill(d, this.currentRegion));
-        }).on('click', (d) => this.focusNode(d));
+        }).on('click', (d) => this.highlightCallback(d.properties.name));
 
         this.dataSelection.merge(enter).transition().style('fill', (d) => {
             return this.stateFill(d, stateSelected)

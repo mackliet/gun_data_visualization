@@ -1,12 +1,15 @@
 import * as d3 from "d3";
 import {Selection} from 'd3-selection';
 import {IView} from "./IView";
-import {createTooltip, removeTooltip} from "./ViewUtils"
+import {createTooltip, removeTooltip, removeAllTooltips, updateTooltip} from "./ViewUtils"
 import {Year_to_indicators_map, State_indicators} from "../Data/State_indicators"
 import {RegionEnum,GeographicAreaEnum, getGeographicAreaStrings, getRegionStrings} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
 import { text } from "d3";
 import { maxHeaderSize } from "http";
+import { types } from "@babel/core";
+import { thisTypeAnnotation } from "@babel/types";
+import { endianness } from "os";
 
 
 export class Scatterplot implements IView 
@@ -35,6 +38,9 @@ export class Scatterplot implements IView
     y_scale: d3.ScaleLinear<number, number>;
     curYear: number;
     current_year_data: Array<State_indicators>;
+    highlightedState: RegionEnum;
+    highlightCallback: (RegionEnum) => void;
+    clearCallback: () => void;
 
     constructor(state_data: Year_to_indicators_map, container: Selection<any, any, any, any>,
                 svg_dims: Dimensions, start_year: number = 2017) 
@@ -60,6 +66,7 @@ export class Scatterplot implements IView
         this.default_transition_time = 800;
         this.year_change_transition_time = 150;
         this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
+        this.highlightedState = null;
 
         this.state_to_geo_area = {}
         for(let state of this.current_year_data)
@@ -77,6 +84,37 @@ export class Scatterplot implements IView
     {
         let no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
         return no_underscores[0].toUpperCase() + no_underscores.slice(1)
+    }
+
+    setHighlightCallback(callback: (RegionEnum)=>void)
+    {
+        this.highlightCallback = callback;
+    }
+
+    setClearCallback(callback: ()=>void)
+    {
+        this.clearCallback = callback;
+    }
+
+    highlightState(state: RegionEnum)
+    {
+        const that = this;
+        this.highlightedState = state;
+        this.circle_group.selectAll('circle').filter((d:State_indicators) => 
+        {
+            return d.state === state;
+        }).each(function(d)
+            {
+                that.createTooltip(d, d3.select(this));
+            }
+        );
+    }
+
+    clearHighlightedState()
+    {
+        this.highlightedState = null;
+        this.circle_group.selectAll('circle').classed('hovered', false);
+        removeAllTooltips(this.svg);
     }
 
     // Currently not used. Can use if we want to, but this data
@@ -385,6 +423,33 @@ export class Scatterplot implements IView
         this.update_plot_with_time(this.default_transition_time);
     }
 
+    createTooltip(d, circle)
+    {
+        circle.classed('hovered', true)
+            const is_float = num => num %1 !== 0;
+            const x_val = d[this.active_x_indicator];
+            const y_val = d[this.active_y_indicator];
+            let lines = [`${d.state}`, 
+                         `${Scatterplot.indicator_to_name(this.active_x_indicator)}: ${is_float(x_val) ? x_val.toFixed(4) : x_val}`, 
+                         `${Scatterplot.indicator_to_name(this.active_y_indicator)}: ${is_float(y_val) ? y_val.toFixed(4) : y_val}`];
+            const x: number = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+            const y: number = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+            createTooltip(this.svg, [x,y], lines);
+    }
+
+    updateTooltip(d, circle)
+    {
+        circle.classed('hovered', true)
+            const is_float = num => num %1 !== 0;
+            const x_val = d[this.active_x_indicator];
+            const y_val = d[this.active_y_indicator];
+            let lines = [`${d.state}`, 
+                         `${Scatterplot.indicator_to_name(this.active_x_indicator)}: ${is_float(x_val) ? x_val.toFixed(4) : x_val}`, 
+                         `${Scatterplot.indicator_to_name(this.active_y_indicator)}: ${is_float(y_val) ? y_val.toFixed(4) : y_val}`];
+            const x: number = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
+            const y: number = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
+            updateTooltip(this.svg, [x,y], lines);
+    }
     
     update_plot_with_time(transition_time: number)
     {
@@ -402,23 +467,24 @@ export class Scatterplot implements IView
         .on('mouseover',
         function(d)
         {
-            let circle = d3.select(this);
-            circle.classed('hovered', true)
-            const is_float = num => num %1 !== 0;
-            const x_val = d[that.active_x_indicator];
-            const y_val = d[that.active_y_indicator];
-            let lines = [`${d.state}`, 
-                         `${Scatterplot.indicator_to_name(that.active_x_indicator)}: ${is_float(x_val) ? x_val.toFixed(4) : x_val}`, 
-                         `${Scatterplot.indicator_to_name(that.active_y_indicator)}: ${is_float(y_val) ? y_val.toFixed(4) : y_val}`];
-            const x: number = parseFloat(circle.attr('cx')) + parseFloat(circle.attr('r')) + 1;
-            const y: number = parseFloat(circle.attr('cy')) + parseFloat(circle.attr('r')) + 1;
-            createTooltip(that.svg, [x,y], lines);
+            if(that.highlightedState === null)
+            {
+                console.log('Called!');
+                let circle = d3.select(this);
+                that.createTooltip(d, circle);
+            }
         })
         .on('mouseout',
         function(d)
         {
-            d3.select(this).classed('hovered', false);
-            removeTooltip(that.svg);
+            if(that.highlightedState === null)
+            {
+                that.clearHighlightedState();
+            }
+        })
+        .on('click', d=>
+        {
+            this.highlightCallback(d.state);
         });
 
         this.circle_selection
@@ -426,6 +492,13 @@ export class Scatterplot implements IView
         .attr('r', this.circle_radius)
         .attr('cx', d => this.x_scale(d[this.active_x_indicator]))
         .attr('cy', d => this.y_scale(d[this.active_y_indicator]))
-        .duration(transition_time);
+        .duration(transition_time)
+        .on('end', function(d) 
+        {
+            if(that.highlightedState !== null && d.state === that.highlightedState)
+            {
+                that.updateTooltip(d, d3.select(this));
+            }
+        });
     }
 }

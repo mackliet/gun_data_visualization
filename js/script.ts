@@ -5,6 +5,7 @@ import {Table} from "./Views/Table";
 import {HeatMap} from "./Views/HeatMap";
 import {Scatterplot} from "./Views/Scatterplot";
 import {ViewState} from "./Views/ViewUtils";
+import {RegionEnum} from "./Data/DataUtils"
 
 // TODO Move this global stuff in some super utility class that is executed before everything else
 declare global {
@@ -50,6 +51,27 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
     d3.select('.activeYear').text('2017')
 
+    const clearHighlight = () =>
+    {
+        scatter.clearHighlightedState();
+        geo.clearHighlightedState();
+    }
+
+    const highlight = (state: RegionEnum) =>
+    {
+        scatter.clearHighlightedState();
+        if(geo.highlightState(state))
+        {
+            scatter.highlightState(state);
+        }
+    }
+
+    
+    scatter.setHighlightCallback(highlight);
+    geo.setHighlightCallback(highlight);
+
+    scatter.setClearCallback(clearHighlight);
+    geo.setClearCallback(clearHighlight);
     // Couldn't figure out how to do this in CSS...hacky JS fix
     const container = d3.select('.container');
     const visualizationWidth = (container.select('.view').node() as HTMLElement).getBoundingClientRect().width;
@@ -79,6 +101,7 @@ slider.oninput = function() {
 let clickNum = 0;
 
 play.on('click', async () => {
+    
     clickNum += 1;
     const current = clickNum;
     // @ts-ignore
