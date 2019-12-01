@@ -37,6 +37,7 @@ export class Table implements IView {
     private readonly GROWTH_RECT_WIDTH = 75;
     private readonly MIGRATION_RECT_WIDTH = 75;
     private readonly POP_RECT_WIDTH = 150;
+    private readonly column_widths = [135, 110, 110, 110, 65]
 
     /**
      *
@@ -55,8 +56,7 @@ export class Table implements IView {
             .domain([-.1, .04]);
         this.growthScale = d3.scaleLinear<number, number>().range([0, this.GROWTH_RECT_WIDTH])
             .domain([.94, 1.03]);
-        this.yearContainer = container.append('div').classed('year', true).text(startYear);
-        this.table = container.append('table');
+        this.table = container.append('table').classed('stat_table', true).style('width', `${svgDims.width}px`);
         this.header = this.table.append('thead');
         this.titleHeader = this.header.append('tr');
         this.axisHeader = this.header.append('tr');
@@ -84,7 +84,7 @@ export class Table implements IView {
                 this.addAxis(svgAxis, axis, 15);
             }
         }
-        this.tBody = this.table.append('tbody');
+        this.tBody = this.table.append('tbody').style('height', `${svgDims.height}px`);
         this.loadTable(startYear);
     }
 
@@ -134,6 +134,9 @@ export class Table implements IView {
                                     .append('rect').classed('popGrowth', true), year);
 
                 //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+
+                this.table.selectAll('tr').selectAll('td').data(this.column_widths).attr('width', d => d);
+                this.table.selectAll('tr').selectAll('th').data(this.column_widths).attr('width', d => d);
 
             },
             update => {
@@ -315,7 +318,6 @@ export class Table implements IView {
     }
 
     changeYear(year: number) {
-        this.yearContainer.text(year);
         this.curYear = year;
         this.loadTable(year);
     }
