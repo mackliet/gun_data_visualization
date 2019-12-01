@@ -12,6 +12,7 @@ interface RawData {
     state: string;
     total_came: number;
     total_left: number;
+    GDP_per_capita: number;
 }
 
 export interface Year {

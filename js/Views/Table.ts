@@ -5,6 +5,7 @@ import {Selection} from 'd3-selection';
 import {Dimensions} from "../Utils/svg-utils";
 import {IView} from "./IView";
 import * as d3 from "d3";
+import { thisTypeAnnotation } from "@babel/types";
 
 
 export class Table implements IView {
@@ -25,7 +26,7 @@ export class Table implements IView {
     private readonly migrationScale: ScaleLinear<number, number>;
     private readonly growthScale: ScaleLinear<number, number>;
     // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-    private readonly headerLabels = ['Region', 'Total Flow', 'Pop. Flow', 'Pop. Growth']; //, 'Population'];
+    private readonly headerLabels = ['Region', 'GDP per Capita', 'Total Flow', 'Pop. Flow', 'Pop. Growth', 'Population'];
 
     public curYear: number;
     readonly currentData: MigrationData;
@@ -37,7 +38,7 @@ export class Table implements IView {
     private readonly GROWTH_RECT_WIDTH = 75;
     private readonly MIGRATION_RECT_WIDTH = 75;
     private readonly POP_RECT_WIDTH = 150;
-    private readonly column_widths = [135, 110, 110, 110, 65]
+    private readonly column_widths = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65]
 
     /**
      *
@@ -50,33 +51,33 @@ export class Table implements IView {
                 svgDims: Dimensions, startYear: number = 2017) {
         this.currentData = migrationPatterns.data;
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
-        this.flowScale = d3.scaleLinear<number, number>().range([0, this.FLOW_RECT_WIDTH])
+        this.flowScale = d3.scaleLinear<number, number>().range([5, this.FLOW_RECT_WIDTH])
             .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
         this.migrationScale = d3.scaleLinear<number, number>().range([0, this.MIGRATION_RECT_WIDTH])
             .domain([-.1, .04]);
         this.growthScale = d3.scaleLinear<number, number>().range([0, this.GROWTH_RECT_WIDTH])
             .domain([.94, 1.03]);
-        this.table = container.append('table').classed('stat_table', true).style('width', `${svgDims.width}px`);
+        this.table = container.append('table').classed('stat_table', true).style('height', `${svgDims.height}px`).style('width', `${svgDims.width}px`);
         this.header = this.table.append('thead');
         this.titleHeader = this.header.append('tr');
-        this.axisHeader = this.header.append('tr');
-        for (const l in this.headerLabels) {
-            this.titleHeader.append('th').text(this.headerLabels[l]).on('click', this.labelListener);
-            const axis = this.axisHeader.append('th').classed(`Axis${l}`, true);
-            const svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
-            if (l === '1') {
+        this.axisHeader = this.header.append('tr');    
+        for (const [header, index] of this.headerLabels.map((v,i) => [v,i])) {
+            this.titleHeader.append('th').style('top', '0px').text(header).on('click', this.labelListener);
+            const axis = this.axisHeader.append('th').classed(`Axis${index}`, true)
+            const svgAxis = axis.append('svg').attr('height', 60);
+            if (index === 2) {
                 //@ts-ignore
                 const axis = d3.axisBottom().scale(this.flowScale).ticks(8);
                 this.addAxis(svgAxis, axis);
 
-            } else if (l == '2'){
+            } else if (index === 3){
                 //@ts-ignore
                 const axis = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat((d) => {
                     return Number.parseFloat(d) * 100 + '%';
                 });
                 this.addAxis(svgAxis, axis);
 
-            } else if (l == '3'){
+            } else if (index === 4){
                 //@ts-ignore
                 const axis = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat((d) => {
                     return (Number.parseFloat(d) * 100) - 100 + '%';
@@ -84,7 +85,9 @@ export class Table implements IView {
                 this.addAxis(svgAxis, axis, 15);
             }
         }
-        this.tBody = this.table.append('tbody').style('height', `${svgDims.height}px`);
+        const rowHeight = (this.titleHeader.node() as HTMLElement).getBoundingClientRect().height;
+        this.axisHeader.selectAll('th').style('top', `${rowHeight}px`);    
+        this.tBody = this.table.append('tbody');
         this.loadTable(startYear);
     }
 
@@ -99,11 +102,16 @@ export class Table implements IView {
             return e.nodeId
         }).join(
             enter => {
-
                 const rows = enter.append('tr');
-                rows.append('td').append('text').text((d) => {
+
+                rows.append('td').style('text-align', 'left').append('text').text((d) => {
                     return RegionEnum[d.nodeId];
                 });
+
+                rows.append('td').classed('gdp', true).append('text').text((d) => {
+                    return d.GDPPerCapita;
+                });
+
                 const tds = rows.append('td');
                 tds.attr('class', 'svg');
                 const svg = tds.append('svg').attr('width', this.FLOW_RECT_WIDTH).style('max-height', '100%')
@@ -125,7 +133,9 @@ export class Table implements IView {
                  */
                 this.out(svg.append('rect').classed('out', true), year);
 
-                this.pop(rows.append('td').attr('width', this.MIGRATION_RECT_WIDTH).append('svg')
+                this.pop(rows.append('td').attr('width', this.MIGRATION_RECT_WIDTH)
+                            .style('text-align', 'left')
+                            .append('svg')
                             .attr('width', '100%').attr('height', 10)
                             .append('rect').classed('pop', true), year);
 
@@ -133,14 +143,15 @@ export class Table implements IView {
                                     .attr('width', '100%').attr('height', 10)
                                     .append('rect').classed('popGrowth', true), year);
 
-                //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+                this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
 
-                this.table.selectAll('tr').selectAll('td').data(this.column_widths).attr('width', d => d);
-                this.table.selectAll('tr').selectAll('th').data(this.column_widths).attr('width', d => d);
+                const that = this;
+                const update_width = function(d,i){d3.select(this as any).attr('width', that.column_widths[i])};
+                this.table.selectAll('tr').selectAll('td').each(update_width).select('svg').each(update_width);
+                this.table.selectAll('tr').selectAll('th').each(update_width).select('svg').each(update_width);
 
             },
             update => {
-
                 update = update.transition();
                 this.net(update.selectAll('rect').filter('.net'), year);
                 this.in(update.selectAll('rect').filter('.in'), year);
@@ -149,8 +160,8 @@ export class Table implements IView {
                 this.pop(update.selectAll('rect').filter('.pop'), year);
 
                 this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
-
-                //this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
+                this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
+                update.selectAll('td').filter('.gdp').select('text').text(d => this.currentData[year][d.nodeId].GDPPerCapita);
             }
         );
 
