@@ -4,11 +4,10 @@ import {Selection} from 'd3-selection';
 import * as topojson from 'topojson';
 import {Feature} from 'geojson';
 import {IView} from "./IView";
-import {MigrationData, MigrationPatterns} from "../Data/MigrationPatterns";
+import {MigrationData, MigrationNode, MigrationPatterns} from "../Data/MigrationPatterns";
 import {RegionEnum} from "../Data/DataUtils"
 import {Dimensions} from "../Utils/svg-utils";
-import {ViewState, createTooltip, removeTooltip, updateTooltip} from "./ViewUtils";
-import { BreakStatement } from "estree";
+import {createTooltip, removeTooltip, updateTooltip, ViewState} from "./ViewUtils";
 
 const stateId = (name: string) => {
     name = name.replace(/\s/g, "");
@@ -25,12 +24,12 @@ export class HeatMap implements IView {
     private readonly geoLegend: string;
     private colorScale: ScaleLinear<number, number>;
     private legendScale: ScaleSequential<string>;
-    private state: ViewState = ViewState.net;
     private currentRegion: RegionEnum;
     private dataSelection;
     private us;
     private g: Selection<any, any, any, any>;
     private features: Array<Feature>;
+    public state: ViewState = ViewState.net;
     highlightCallback: (RegionEnum) => void;
     clearCallback: () => void;
 
@@ -149,6 +148,20 @@ export class HeatMap implements IView {
                 case ViewState.in:
                     flowData = this.currentData[this.curYear][nodeId].totalCame;
                     break;
+                case ViewState.growth:
+                    const curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
+                    const lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
+                    flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
+                    break;
+                case ViewState.flow:
+                    const curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
+                    const lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
+                    flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
+                    break;
+                case ViewState.gdp:
+                    const d = <MigrationNode>this.currentData[this.curYear][nodeId];
+                    flowData = d.GDPPerCapita;
+                    break;
                 default:
                     flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
             }
@@ -192,6 +205,7 @@ export class HeatMap implements IView {
         switch(this.state) {
             case ViewState.out:
                 return d3.interpolateReds;
+            case ViewState.gdp:
             case ViewState.in:
                 return d3.interpolateBlues;
             default:
@@ -223,12 +237,26 @@ export class HeatMap implements IView {
                 this.colorScale = d3.scaleLinear().domain([0,maxValue]).range([0,1]);
                 this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([0,maxValue]);
                 break;
+            case ViewState.growth:
+                this.colorScale = d3.scaleLinear().domain([-0.04, 0.04]).range([0,1]);
+                this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.04, 0.04]);
+                break;
+            case ViewState.gdp:
+                // District of Columbia is a bit of an outlier
+                this.colorScale = d3.scaleLinear().domain([37000, 72000]).range([0,1]);
+                this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([37000, 72000]);
+                break;
+            case ViewState.flow:
+                // District of Columbia is a bit of an outlier
+                this.colorScale = d3.scaleLinear().domain([-0.08, 0.04]).range([0,1]);
+                this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.08, 0.04]);
+                break;
             default:
                 if (this.currentRegion != null) {
                     maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeNet;
                     domain = [-maxValue,maxValue];
                     this.colorScale = d3.scaleLinear().domain([-maxValue,maxValue]).range([0,1]);
-                    this.legendScale = d3.scaleSequential(d3.interpolateRdBu).domain(domain);
+                    this.legendScale = d3.scaleSequential(this.getInterpolate()).domain(domain);
                 } else {
                     const domain: number[] = [-1e5,1e5];
                     this.colorScale = d3.scaleLinear().domain([-1e5,1e5]).range([0,1]);
@@ -323,8 +351,14 @@ export class HeatMap implements IView {
         this.drawMap(this.currentRegion);
     }
 
-    changeYear(year: number) {
+    public changeYear(year: number) {
         this.curYear = year;
+        this.drawMap(this.currentRegion);
+    }
+
+    public toggleGeoState(state: ViewState) {
+        this.state = state;
+        this.currentRegion = null;
         this.drawMap(this.currentRegion);
     }
 }

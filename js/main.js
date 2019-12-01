@@ -220,6 +220,93 @@
         return year_to_indicators;
     }
 
+    var ViewState;
+    (function (ViewState) {
+        ViewState["net"] = "net";
+        ViewState["out"] = "out";
+        ViewState["in"] = "in";
+        ViewState["growth"] = "growth";
+        ViewState["flow"] = "flow";
+        ViewState["gdp"] = "gdp";
+    })(ViewState || (ViewState = {}));
+    function getTooltipPadding() {
+        return 5;
+    }
+    function addTooltipLines(tooltip_text, tooltip_rect, text_lines) {
+        var test_tspan = tooltip_text.append('tspan').text('TEST');
+        var oneLineHeight = test_tspan.node().getBBox().height;
+        test_tspan.remove();
+        for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
+            var line = text_lines_1[_i];
+            tooltip_text
+                .append('tspan')
+                .classed('custom_tooltip', true)
+                .attr('x', 0)
+                .attr('y', tooltip_text.node().getBBox().height)
+                .text(line);
+        }
+        var padding = getTooltipPadding();
+        tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 2 * padding);
+        tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 2 * padding);
+        tooltip_text
+            .selectAll('tspan')
+            .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
+            .attr('y', function (d, i) {
+            return (i + 1) * oneLineHeight;
+        });
+    }
+    function placeTooltip(svg, tooltip, tooltip_rect, _a) {
+        var x = _a[0], y = _a[1];
+        var padding = getTooltipPadding();
+        var svg_width = parseFloat(svg.attr('width'));
+        var tooltip_width = parseFloat(tooltip_rect.attr('width'));
+        var tooltip_x = x + tooltip_width > svg_width
+            ? svg_width - tooltip_width - 2 * padding
+            : x;
+        var mouseY = y;
+        try {
+            mouseY = d3.mouse(svg.node())[1];
+        }
+        catch (_b) {
+            mouseY = y;
+        }
+        var tooltip_y = y == mouseY ? (y + 2) : y;
+        tooltip.attr('transform', "translate (" + tooltip_x + " " + tooltip_y + ")");
+    }
+    function createTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg
+            .append('g')
+            .classed('tooltip-group', true);
+        var tooltip_rect = tooltip
+            .append('rect')
+            .classed('custom_tooltip', true)
+            .attr('rx', 10)
+            .attr('ry', 10);
+        var tooltip_text = tooltip
+            .append('text')
+            .classed('custom_tooltip', true);
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function updateTooltip(svg, _a, text_lines) {
+        var x = _a[0], y = _a[1];
+        var tooltip = svg.select('.tooltip-group');
+        var tooltip_rect = tooltip.select('rect');
+        var tooltip_text = tooltip.select('text');
+        tooltip_text
+            .selectAll('tspan')
+            .remove();
+        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
+        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
+    }
+    function removeTooltip(svg) {
+        svg.select('.tooltip-group').remove();
+    }
+    function removeAllTooltips(svg) {
+        svg.selectAll('.tooltip-group').remove();
+    }
+
     var Table = /** @class */ (function () {
         /**
          *
@@ -228,10 +315,9 @@
          * @param svgDims dimensions of the SVG
          * @param startYear year to start the visualization
          */
-        function Table(migrationPatterns, container, svgDims, startYear) {
+        function Table(migrationPatterns, container, svgDims, geo, startYear) {
             var _this = this;
             if (startYear === void 0) { startYear = 2017; }
-            // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
             this.headerLabels = ['Region', 'GDP per Capita', 'Total Flow', 'Pop. Flow', 'Pop. Growth', 'Population'];
             /**
              * Table constants
@@ -240,7 +326,8 @@
             this.GROWTH_RECT_WIDTH = 75;
             this.MIGRATION_RECT_WIDTH = 75;
             this.POP_RECT_WIDTH = 150;
-            this.column_widths = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65];
+            this.COLUMN_WIDTHS = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30,
+                this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65];
             this.currentData = JSON.parse(JSON.stringify(migrationPatterns.data)); // Make deep copy. Sorting was screwing up heat map
             this.curYear = startYear;
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
@@ -273,7 +360,23 @@
             var _loop_1 = function (header, index) {
                 this_1.titleHeader.append('th').style('top', '0px')
                     .text(header).classed('table_header', true)
-                    .on('click', function () { return _this.labelListener(header); });
+                    .on('click', function () {
+                    var h = header;
+                    _this.labelListener(h);
+                    if (h === 'Pop. Growth') {
+                        console.log("Passing " + ViewState.growth);
+                        geo.toggleGeoState(ViewState.growth);
+                    }
+                    else if (h == 'Total Flow') {
+                        geo.toggleGeoState(ViewState.net);
+                    }
+                    else if (h == 'Pop. Flow') {
+                        geo.toggleGeoState(ViewState.flow);
+                    }
+                    else if (h == 'GDP per Capita') {
+                        geo.toggleGeoState(ViewState.gdp);
+                    }
+                });
                 var axis = this_1.axisHeader.append('th').classed("Axis" + index, true);
                 var svgAxis = axis.append('svg').attr('height', 60);
                 if (index === 2) {
@@ -311,12 +414,7 @@
          */
         Table.prototype.loadTable = function (year) {
             var _this = this;
-            var data = JSON.parse(JSON.stringify(this.currentData[year]));
-            // if (sortFunction) {
-            //     // data.sort(sortFunction);
-            //     // const sortFunction = (a,b) => this.sortOrder * this.sortFunctions(this.lastSorted)(a,b,this.curYear);
-            //     // this.tBody.selectAll('tr').sort(sortFunction);
-            // }
+            var data = this.currentData[year];
             //@ts-ignore
             this.tBody.selectAll('tr').data(data, function (d) {
                 var e = d;
@@ -357,7 +455,7 @@
                     .append('rect').classed('popGrowth', true), year);
                 _this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
                 var that = _this;
-                var update_width = function (d, i) { d3.select(this).attr('width', that.column_widths[i]); };
+                var update_width = function (d, i) { d3.select(this).attr('width', that.COLUMN_WIDTHS[i]); };
                 _this.table.selectAll('tr').selectAll('td').each(update_width).select('svg').each(update_width);
                 _this.table.selectAll('tr').selectAll('th').each(update_width).select('svg').each(update_width);
             }, function (update) {
@@ -540,11 +638,13 @@
             //@ts-ignore
             el.append('g').attr("transform", "translate(" + x + ", 48)").call(axis).selectAll('text').style("text-anchor", "end")
                 .attr("dx", "-.5em")
-                // .attr("dy", ".01em")
                 .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
         };
+        /**
+         * Listener attached to the column headers
+         * @param l integer value indicating which column header was clicked
+         */
         Table.prototype.labelListener = function (l) {
-            console.log(l);
             if (this.lastSorted !== l) {
                 this.sortOrder = 1;
             }
@@ -552,96 +652,16 @@
             this.sortOrder *= -1;
             this.loadTable(this.curYear);
         };
+        /**
+         * Listener that changes the year and reloads the table
+         * @param year
+         */
         Table.prototype.changeYear = function (year) {
             this.curYear = year;
             this.loadTable(year);
         };
         return Table;
     }());
-
-    var ViewState;
-    (function (ViewState) {
-        ViewState["net"] = "net";
-        ViewState["out"] = "out";
-        ViewState["in"] = "in";
-    })(ViewState || (ViewState = {}));
-    function getTooltipPadding() {
-        return 5;
-    }
-    function addTooltipLines(tooltip_text, tooltip_rect, text_lines) {
-        var test_tspan = tooltip_text.append('tspan').text('TEST');
-        var oneLineHeight = test_tspan.node().getBBox().height;
-        test_tspan.remove();
-        for (var _i = 0, text_lines_1 = text_lines; _i < text_lines_1.length; _i++) {
-            var line = text_lines_1[_i];
-            tooltip_text
-                .append('tspan')
-                .classed('custom_tooltip', true)
-                .attr('x', 0)
-                .attr('y', tooltip_text.node().getBBox().height)
-                .text(line);
-        }
-        var padding = getTooltipPadding();
-        tooltip_rect.attr('width', tooltip_text.node().getBBox().width + 2 * padding);
-        tooltip_rect.attr('height', tooltip_text.node().getBBox().height + 2 * padding);
-        tooltip_text
-            .selectAll('tspan')
-            .attr('x', parseFloat(tooltip_rect.attr('width')) / 2)
-            .attr('y', function (d, i) {
-            return (i + 1) * oneLineHeight;
-        });
-    }
-    function placeTooltip(svg, tooltip, tooltip_rect, _a) {
-        var x = _a[0], y = _a[1];
-        var padding = getTooltipPadding();
-        var svg_width = parseFloat(svg.attr('width'));
-        var tooltip_width = parseFloat(tooltip_rect.attr('width'));
-        var tooltip_x = x + tooltip_width > svg_width
-            ? svg_width - tooltip_width - 2 * padding
-            : x;
-        var mouseY = y;
-        try {
-            mouseY = d3.mouse(svg.node())[1];
-        }
-        catch (_b) {
-            mouseY = y;
-        }
-        var tooltip_y = y == mouseY ? (y + 2) : y;
-        tooltip.attr('transform', "translate (" + tooltip_x + " " + tooltip_y + ")");
-    }
-    function createTooltip(svg, _a, text_lines) {
-        var x = _a[0], y = _a[1];
-        var tooltip = svg
-            .append('g')
-            .classed('tooltip-group', true);
-        var tooltip_rect = tooltip
-            .append('rect')
-            .classed('custom_tooltip', true)
-            .attr('rx', 10)
-            .attr('ry', 10);
-        var tooltip_text = tooltip
-            .append('text')
-            .classed('custom_tooltip', true);
-        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
-        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
-    }
-    function updateTooltip(svg, _a, text_lines) {
-        var x = _a[0], y = _a[1];
-        var tooltip = svg.select('.tooltip-group');
-        var tooltip_rect = tooltip.select('rect');
-        var tooltip_text = tooltip.select('text');
-        tooltip_text
-            .selectAll('tspan')
-            .remove();
-        addTooltipLines(tooltip_text, tooltip_rect, text_lines);
-        placeTooltip(svg, tooltip, tooltip_rect, [x, y]);
-    }
-    function removeTooltip(svg) {
-        svg.select('.tooltip-group').remove();
-    }
-    function removeAllTooltips(svg) {
-        svg.selectAll('.tooltip-group').remove();
-    }
 
     var stateId = function (name) {
         name = name.replace(/\s/g, "");
@@ -749,6 +769,20 @@
                     case ViewState.in:
                         flowData = this.currentData[this.curYear][nodeId].totalCame;
                         break;
+                    case ViewState.growth:
+                        var curYear = this.currentData[this.curYear][nodeId];
+                        var lastYear = this.currentData[this.curYear - 1][nodeId];
+                        flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
+                        break;
+                    case ViewState.flow:
+                        var curYear = this.currentData[this.curYear][nodeId];
+                        var lastYear = this.currentData[this.curYear - 1][nodeId];
+                        flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
+                        break;
+                    case ViewState.gdp:
+                        var d_1 = this.currentData[this.curYear][nodeId];
+                        flowData = d_1.GDPPerCapita;
+                        break;
                     default:
                         flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
                 }
@@ -790,6 +824,7 @@
             switch (this.state) {
                 case ViewState.out:
                     return d3.interpolateReds;
+                case ViewState.gdp:
                 case ViewState.in:
                     return d3.interpolateBlues;
                 default:
@@ -822,12 +857,26 @@
                     this.colorScale = d3.scaleLinear().domain([0, maxValue]).range([0, 1]);
                     this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([0, maxValue]);
                     break;
+                case ViewState.growth:
+                    this.colorScale = d3.scaleLinear().domain([-0.04, 0.04]).range([0, 1]);
+                    this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.04, 0.04]);
+                    break;
+                case ViewState.gdp:
+                    // District of Columbia is a bit of an outlier
+                    this.colorScale = d3.scaleLinear().domain([37000, 72000]).range([0, 1]);
+                    this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([37000, 72000]);
+                    break;
+                case ViewState.flow:
+                    // District of Columbia is a bit of an outlier
+                    this.colorScale = d3.scaleLinear().domain([-0.08, 0.04]).range([0, 1]);
+                    this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.08, 0.04]);
+                    break;
                 default:
                     if (this.currentRegion != null) {
                         maxValue = this.migrationPatterns.stateRanges[this.currentRegion].maxEdgeNet;
                         domain = [-maxValue, maxValue];
                         this.colorScale = d3.scaleLinear().domain([-maxValue, maxValue]).range([0, 1]);
-                        this.legendScale = d3.scaleSequential(d3.interpolateRdBu).domain(domain);
+                        this.legendScale = d3.scaleSequential(this.getInterpolate()).domain(domain);
                     }
                     else {
                         this.colorScale = d3.scaleLinear().domain([-1e5, 1e5]).range([0, 1]);
@@ -896,6 +945,11 @@
         };
         HeatMap.prototype.changeYear = function (year) {
             this.curYear = year;
+            this.drawMap(this.currentRegion);
+        };
+        HeatMap.prototype.toggleGeoState = function (state) {
+            this.state = state;
+            this.currentRegion = null;
             this.drawMap(this.currentRegion);
         };
         return HeatMap;
@@ -1378,8 +1432,8 @@
     var migrationPatterns;
     d3.json('data/migration_and_economic_data.json').then(function (data) {
         migrationPatterns = new MigrationPatterns(data);
-        table = new Table(migrationPatterns, tableSelection, tableDims);
         geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
+        table = new Table(migrationPatterns, tableSelection, tableDims, geo);
         scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
         d3.select('.activeYear').text('2017');
         var clearHighlight = function () {
@@ -1401,11 +1455,8 @@
         var visualizationWidth = container.select('.view').node().getBoundingClientRect().width;
         var containerWidth = container.node().getBoundingClientRect().width;
         container.style('padding-left', (containerWidth - visualizationWidth) / 2 + "px").classed('hidden', false);
-        // TODO Chord Diagram Integration
-        // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     });
     // Bind year event to various views
-    // TODO Bind to scatterplot and table
     slider.oninput = function () {
         //@ts-ignore
         var minYear = Math.min.apply(Math, migrationPatterns.years);

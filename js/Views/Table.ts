@@ -5,6 +5,8 @@ import {Selection} from 'd3-selection';
 import {Dimensions} from "../Utils/svg-utils";
 import {IView} from "./IView";
 import * as d3 from "d3";
+import {ViewState} from "./ViewUtils";
+import {HeatMap} from "./HeatMap";
 
 type sortFuncType = (a: MigrationNode, b: MigrationNode, year: number) => number;
 export class Table implements IView {
@@ -49,7 +51,7 @@ export class Table implements IView {
      * @param startYear year to start the visualization
      */
     constructor(migrationPatterns: MigrationPatterns, container: Selection<any, any, any, any>,
-                svgDims: Dimensions, startYear: number = 2017) {
+                svgDims: Dimensions, geo: HeatMap, startYear: number = 2017) {
         this.currentData = JSON.parse(JSON.stringify(migrationPatterns.data)); // Make deep copy. Sorting was screwing up heat map
         this.curYear = startYear;
         console.debug(`Table SVG Dimensions are width: ${svgDims.width}; height: ${svgDims.height}`);
@@ -83,8 +85,22 @@ export class Table implements IView {
                 
         for (const [header, index] of this.headerLabels.map((v:string,i:number) => [v,i])) {
             this.titleHeader.append('th').style('top', '0px')
-            .text(header).classed('table_header', true)
-            .on('click', () => this.labelListener(header as string));
+                .text(header).classed('table_header', true)
+                .on('click', () => {
+                    const h = header as string;
+                    this.labelListener(h);
+
+                    if (h === 'Pop. Growth'){
+                        console.log(`Passing ${ViewState.growth}`)
+                        geo.toggleGeoState(ViewState.growth);
+                    } else if (h == 'Total Flow') {
+                        geo.toggleGeoState(ViewState.net);
+                    } else if (h == 'Pop. Flow') {
+                        geo.toggleGeoState(ViewState.flow);
+                    } else if (h == 'GDP per Capita'){
+                        geo.toggleGeoState(ViewState.gdp);
+                    }
+                });
             const axis = this.axisHeader.append('th').classed(`Axis${index}`, true)
             const svgAxis = axis.append('svg').attr('height', 60);
             if (index === 2) {
@@ -117,7 +133,7 @@ export class Table implements IView {
      * Class to refresh the data table for sorting, brush, or selections
      */
     loadTable(year) {
-        const data = JSON.parse(JSON.stringify(this.currentData[year]));
+        const data = this.currentData[year];
         //@ts-ignore
         this.tBody.selectAll('tr').data(data, (d) => {
             const e: MigrationNode = <MigrationNode>d;
