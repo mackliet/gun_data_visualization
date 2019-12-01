@@ -27,7 +27,6 @@ export class Scatterplot implements IView
     readonly year_change_transition_time: number;
     readonly color_map: d3.ScaleOrdinal<string, string>;
     readonly state_to_geo_area: {[key:string]:string}
-    readonly active_year_text: Selection<any, any, any, any>
     region_column: Selection<any, any, any, any>;
     circle_selection: Selection<any, any, any, any>;
     active_x_indicator: string;
@@ -46,13 +45,12 @@ export class Scatterplot implements IView
         this.year_to_indicators = state_data
         this.current_year_data = this.year_to_indicators[this.curYear];
         this.container = container;
-        this.state_table_div = plot_div.append('div');
+        this.state_table_div = plot_div.append('div').append('div');
         this.padding = 110;
         this.circle_radius = 5;
         this.label_padding = 50;
         this.svg = plot_div.append('svg').attr('height', svg_dims.height-this.label_padding+10).attr('width', svg_dims.width);
         this.legend_div = plot_div.append('div');
-        this.active_year_text = this.svg.append('text');
         this.axes_group = this.svg.append('g');
         this.circle_group = this.svg.append('g');
         this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
@@ -73,23 +71,12 @@ export class Scatterplot implements IView
         this.create_dropdowns();
         this.create_scales();
         this.update_plot();
-        this.setup_active_year();
     };
 
     static indicator_to_name(indicator)
     {
         let no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
         return no_underscores[0].toUpperCase() + no_underscores.slice(1)
-    }
-
-    setup_active_year()
-    {
-        this.active_year_text
-        .style('font-size', `${(this.svg_dims.height-this.padding)/6}px`)
-        .style('opacity', 0.2)
-        .style('text-anchor', 'left')
-        .attr('transform', `translate (${this.x_scale.range()[0] + (this.svg_dims.width-this.padding)/10}, ${this.y_scale.range()[1] +this.padding})`)
-        .text(this.curYear);
     }
 
     // Currently not used. Can use if we want to, but this data
@@ -330,7 +317,6 @@ export class Scatterplot implements IView
     {
         this.current_year_data = this.year_to_indicators[year];
         this.curYear = year;
-        this.active_year_text.text(this.curYear);
         this.update_plot_with_time(this.year_change_transition_time);
     }
 

@@ -1,16 +1,21 @@
 /*TODO Update CSS styles, complete initial design template*/
+div.header {
+    margin: auto;
+    width: 1000px;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+}
 .container {
-    margin-top: 100px;
-    margin-left: 10px;
-    margin-right: 10px;
-    height: 1000px;
-    padding-left: 10px;
-    padding-right: 10px;
     max-width: 2200px;
+    padding-top: 20px;
 }
 
 .left {
     float: left;
+}
+
+div.hidden {
+    visibility: hidden;
 }
 
 .centered_container
@@ -53,11 +58,21 @@ tspan.custom_tooltip
     float: left;
 }
 
+.activeYear {
+    float: left;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 32px;
+}
+
 /* Lifted from https://www.w3schools.com/howto/howto_js_rangeslider.asp */
 .slider {
+    float: left;
+    margin-left: 10px;
+    margin-right: 10px;
     margin-top: 20px;
     -webkit-appearance: none;
-    width: 90%;
+    width: 85%;
     height: 15px;
     border-radius: 5px;
     background: #d3d3d3;
@@ -85,4 +100,3 @@ tspan.custom_tooltip
     background: #4CAF50;
     cursor: pointer;
 }
-

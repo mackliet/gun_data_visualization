@@ -127,6 +127,7 @@
                         totalLeft: d.total_left,
                         toEdges: new Map(),
                         fromEdges: new Map(),
+                        GDPPerCapita: d.GDP_per_capita
                     };
                     /**
                      * Check totals get max values
@@ -230,7 +231,7 @@
         function Table(migrationPatterns, container, svgDims, startYear) {
             if (startYear === void 0) { startYear = 2017; }
             // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
-            this.headerLabels = ['Region', 'Total Flow', 'Pop. Flow', 'Pop. Growth']; //, 'Population'];
+            this.headerLabels = ['Region', 'GDP per Capita', 'Total Flow', 'Pop. Flow', 'Pop. Growth', 'Population'];
             /**
              * Table constants
              */
@@ -238,36 +239,37 @@
             this.GROWTH_RECT_WIDTH = 75;
             this.MIGRATION_RECT_WIDTH = 75;
             this.POP_RECT_WIDTH = 150;
-            this.column_widths = [135, 110, 110, 110, 65];
+            this.column_widths = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65];
             this.currentData = migrationPatterns.data;
             console.debug("Table SVG Dimensions are width: " + svgDims.width + "; height: " + svgDims.height);
-            this.flowScale = d3.scaleLinear().range([0, this.FLOW_RECT_WIDTH])
+            this.flowScale = d3.scaleLinear().range([5, this.FLOW_RECT_WIDTH])
                 .domain([migrationPatterns.minSum, migrationPatterns.maxInflow]);
             this.migrationScale = d3.scaleLinear().range([0, this.MIGRATION_RECT_WIDTH])
                 .domain([-.1, .04]);
             this.growthScale = d3.scaleLinear().range([0, this.GROWTH_RECT_WIDTH])
                 .domain([.94, 1.03]);
-            this.table = container.append('table').classed('stat_table', true).style('width', svgDims.width + "px");
+            this.table = container.append('table').classed('stat_table', true).style('height', svgDims.height + "px").style('width', svgDims.width + "px");
             this.header = this.table.append('thead');
             this.titleHeader = this.header.append('tr');
             this.axisHeader = this.header.append('tr');
-            for (var l in this.headerLabels) {
-                this.titleHeader.append('th').text(this.headerLabels[l]).on('click', this.labelListener);
-                var axis = this.axisHeader.append('th').classed("Axis" + l, true);
-                var svgAxis = axis.append('svg').attr('height', 60).attr('width', this.FLOW_RECT_WIDTH + 30);
-                if (l === '1') {
+            for (var _i = 0, _a = this.headerLabels.map(function (v, i) { return [v, i]; }); _i < _a.length; _i++) {
+                var _b = _a[_i], header = _b[0], index = _b[1];
+                this.titleHeader.append('th').style('top', '0px').text(header).on('click', this.labelListener);
+                var axis = this.axisHeader.append('th').classed("Axis" + index, true);
+                var svgAxis = axis.append('svg').attr('height', 60);
+                if (index === 2) {
                     //@ts-ignore
                     var axis_1 = d3.axisBottom().scale(this.flowScale).ticks(8);
                     this.addAxis(svgAxis, axis_1);
                 }
-                else if (l == '2') {
+                else if (index === 3) {
                     //@ts-ignore
                     var axis_2 = d3.axisBottom().scale(this.migrationScale).ticks(5).tickFormat(function (d) {
                         return Number.parseFloat(d) * 100 + '%';
                     });
                     this.addAxis(svgAxis, axis_2);
                 }
-                else if (l == '3') {
+                else if (index === 4) {
                     //@ts-ignore
                     var axis_3 = d3.axisBottom().scale(this.growthScale).ticks(5).tickFormat(function (d) {
                         return (Number.parseFloat(d) * 100) - 100 + '%';
@@ -275,7 +277,9 @@
                     this.addAxis(svgAxis, axis_3, 15);
                 }
             }
-            this.tBody = this.table.append('tbody').style('height', svgDims.height + "px");
+            var rowHeight = this.titleHeader.node().getBoundingClientRect().height;
+            this.axisHeader.selectAll('th').style('top', rowHeight + "px");
+            this.tBody = this.table.append('tbody');
             this.loadTable(startYear);
         }
         /**
@@ -290,8 +294,11 @@
                 return e.nodeId;
             }).join(function (enter) {
                 var rows = enter.append('tr');
-                rows.append('td').append('text').text(function (d) {
+                rows.append('td').style('text-align', 'left').append('text').text(function (d) {
                     return RegionEnum[d.nodeId];
+                });
+                rows.append('td').classed('gdp', true).append('text').text(function (d) {
+                    return d.GDPPerCapita;
                 });
                 var tds = rows.append('td');
                 tds.attr('class', 'svg');
@@ -310,15 +317,19 @@
                  * Create difference rectangle.  Should be purple until it ends
                  */
                 _this.out(svg.append('rect').classed('out', true), year);
-                _this.pop(rows.append('td').attr('width', _this.MIGRATION_RECT_WIDTH).append('svg')
+                _this.pop(rows.append('td').attr('width', _this.MIGRATION_RECT_WIDTH)
+                    .style('text-align', 'left')
+                    .append('svg')
                     .attr('width', '100%').attr('height', 10)
                     .append('rect').classed('pop', true), year);
                 _this.popGrowth(rows.append('td').attr('width', _this.GROWTH_RECT_WIDTH).append('svg')
                     .attr('width', '100%').attr('height', 10)
                     .append('rect').classed('popGrowth', true), year);
-                //this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
-                _this.table.selectAll('tr').selectAll('td').data(_this.column_widths).attr('width', function (d) { return d; });
-                _this.table.selectAll('tr').selectAll('th').data(_this.column_widths).attr('width', function (d) { return d; });
+                _this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
+                var that = _this;
+                var update_width = function (d, i) { d3.select(this).attr('width', that.column_widths[i]); };
+                _this.table.selectAll('tr').selectAll('td').each(update_width).select('svg').each(update_width);
+                _this.table.selectAll('tr').selectAll('th').each(update_width).select('svg').each(update_width);
             }, function (update) {
                 update = update.transition();
                 _this.net(update.selectAll('rect').filter('.net'), year);
@@ -326,7 +337,8 @@
                 _this.out(update.selectAll('rect').filter('.out'), year);
                 _this.pop(update.selectAll('rect').filter('.pop'), year);
                 _this.popGrowth(update.selectAll('rect').filter('.popGrowth'), year);
-                //this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year)
+                _this.popTotal(update.selectAll('td').filter('.popTotal').select('text'), year);
+                update.selectAll('td').filter('.gdp').select('text').text(function (d) { return _this.currentData[year][d.nodeId].GDPPerCapita; });
             });
         };
         /**
@@ -883,13 +895,12 @@
             this.year_to_indicators = state_data;
             this.current_year_data = this.year_to_indicators[this.curYear];
             this.container = container;
-            this.state_table_div = plot_div.append('div');
+            this.state_table_div = plot_div.append('div').append('div');
             this.padding = 110;
             this.circle_radius = 5;
             this.label_padding = 50;
             this.svg = plot_div.append('svg').attr('height', svg_dims.height - this.label_padding + 10).attr('width', svg_dims.width);
             this.legend_div = plot_div.append('div');
-            this.active_year_text = this.svg.append('text');
             this.axes_group = this.svg.append('g');
             this.circle_group = this.svg.append('g');
             this.indicators = ['population', 'total_left', 'total_came', 'net_immigration_flow', 'total_left_per_capita', 'total_came_per_capita', 'net_immigration_flow_per_capita', 'GDP_per_capita', 'GDP_percent_change', 'jobs', 'jobs_per_capita', 'personal_income_per_capita', 'personal_disposable_income_per_capita', 'personal_taxes_per_capita'];
@@ -908,19 +919,10 @@
             this.create_dropdowns();
             this.create_scales();
             this.update_plot();
-            this.setup_active_year();
         }
         Scatterplot.indicator_to_name = function (indicator) {
             var no_underscores = indicator.replace(new RegExp('_', 'g'), ' ');
             return no_underscores[0].toUpperCase() + no_underscores.slice(1);
-        };
-        Scatterplot.prototype.setup_active_year = function () {
-            this.active_year_text
-                .style('font-size', (this.svg_dims.height - this.padding) / 6 + "px")
-                .style('opacity', 0.2)
-                .style('text-anchor', 'left')
-                .attr('transform', "translate (" + (this.x_scale.range()[0] + (this.svg_dims.width - this.padding) / 10) + ", " + (this.y_scale.range()[1] + this.padding) + ")")
-                .text(this.curYear);
         };
         // Currently not used. Can use if we want to, but this data
         // is now in the state selection table
@@ -1103,7 +1105,6 @@
         Scatterplot.prototype.change_year = function (year) {
             this.current_year_data = this.year_to_indicators[year];
             this.curYear = year;
-            this.active_year_text.text(this.curYear);
             this.update_plot_with_time(this.year_change_transition_time);
         };
         Scatterplot.prototype.update_scales_with_time = function (transition_time) {
@@ -1236,7 +1237,7 @@
     var tableSelection = d3.select('.dataTable');
     var tableDims = {
         height: 600,
-        width: 600
+        width: 780
     };
     var geoSelection = d3.select('.geoHeat');
     var geoDims = {
@@ -1245,8 +1246,8 @@
     };
     var scatterSelection = d3.select('.scatterplot');
     var scatterDims = {
-        height: 550,
-        width: 550
+        height: 600,
+        width: 600
     };
     var slider = document.getElementById("yearSlider");
     var play = d3.select(".play");
@@ -1260,6 +1261,12 @@
         table = new Table(migrationPatterns, tableSelection, tableDims);
         geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
         scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+        d3.select('.activeYear').text('2017');
+        // Couldn't figure out how to do this in CSS...hacky JS fix
+        var container = d3.select('.container');
+        var visualizationWidth = container.select('.view').node().getBoundingClientRect().width;
+        var containerWidth = container.node().getBoundingClientRect().width;
+        container.style('padding-left', (containerWidth - visualizationWidth) / 2 + "px").classed('hidden', false);
         // TODO Chord Diagram Integration
         // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
     });
@@ -1278,6 +1285,7 @@
             var obj = _a[_i];
             obj.changeYear(curYear);
         }
+        d3.select('.activeYear').text(curYear);
     };
     var clickNum = 0;
     play.on('click', function () { return __awaiter(void 0, void 0, void 0, function () {

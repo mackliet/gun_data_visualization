@@ -20,7 +20,7 @@ String.prototype.clean = function (this: string) {
 const tableSelection = d3.select('.dataTable');
 const tableDims = {
     height: 600,
-    width: 600
+    width: 780
 };
 const geoSelection = d3.select('.geoHeat');
 const geoDims = {
@@ -30,8 +30,8 @@ const geoDims = {
 
 const scatterSelection = d3.select('.scatterplot');
 const scatterDims = {
-    height: 550,
-    width: 550
+    height: 600,
+    width: 600
 };
 
 let slider = document.getElementById("yearSlider");
@@ -48,6 +48,13 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     table = new Table(migrationPatterns, tableSelection, tableDims);
     geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
     scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+    d3.select('.activeYear').text('2017')
+
+    // Couldn't figure out how to do this in CSS...hacky JS fix
+    const container = d3.select('.container');
+    const visualizationWidth = (container.select('.view').node() as HTMLElement).getBoundingClientRect().width;
+    const containerWidth = (container.node() as HTMLElement).getBoundingClientRect().width;
+    container.style('padding-left', `${(containerWidth-visualizationWidth)/2}px`).classed('hidden', false);
     // TODO Chord Diagram Integration
     // const chord = new ChordDiagram(migrationPatterns, chordSelection, chordDims)
 });
@@ -66,6 +73,7 @@ slider.oninput = function() {
     for (const obj of Array.from([geo, table])) {
         obj.changeYear(curYear);
     }
+    d3.select('.activeYear').text(curYear)
 };
 
 let clickNum = 0;

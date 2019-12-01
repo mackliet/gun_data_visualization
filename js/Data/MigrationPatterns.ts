@@ -19,6 +19,7 @@ export interface MigrationNode {
     totalPopulation: number;
     totalCame: number;
     totalLeft: number;
+    GDPPerCapita: number;
 }
 
 export interface StateRange {
@@ -78,6 +79,7 @@ export class MigrationPatterns {
                     totalLeft: d.total_left,
                     toEdges: new Map<RegionEnum, MigrationEdge>(),
                     fromEdges: new Map<RegionEnum, MigrationEdge>(),
+                    GDPPerCapita: d.GDP_per_capita
                 };
 
                 /**

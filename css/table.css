@@ -1,44 +1,33 @@
-.stat_table th, .stat_table td {
-    border-collapse: collapse;
-}
-
-.dataTable {
+div.dataTable {
     padding-left: 15px;
 }
-table.stat_table {
-    border-collapse: collapse;
-    table-layout: fixed;
-    border: none;
-}
 
-.stat_table th {
-    border: none;
+table.stat_table {
+    display: block;
+    overflow: auto;
     text-align: center;
 }
-
 .stat_table thead tr{
-    display:block;
     width: 100%;
 }
 
-.stat_table tbody {
-    display: block;
-    overflow: auto;
+.stat_table th
+{
+    background: white;
+    position: sticky;
+    padding: 0px;
 }
 
-.stat_table td {
+.stat_table td th {
     font-size: 1rem;
     line-height: 0px;
-    border: none;
     overflow: hidden;
     max-height: 20px;
     height: 20px;
-    text-align: left;
 }
 
-td.svg {
-    border-bottom: 0px;
-    border-top: 0px;
+.stat_table text {
+    width: 100%;
 }
 
 .stat_table td > svg {
