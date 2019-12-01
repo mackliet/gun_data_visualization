@@ -5,7 +5,6 @@ import {Selection} from 'd3-selection';
 import {Dimensions} from "../Utils/svg-utils";
 import {IView} from "./IView";
 import * as d3 from "d3";
-import { thisTypeAnnotation } from "@babel/types";
 
 type sortFuncType = (a: MigrationNode, b: MigrationNode, year: number) => number;
 export class Table implements IView {
@@ -15,8 +14,8 @@ export class Table implements IView {
      */
     private lastSorted: string;
     private sortOrder: number;
-    private sortFunctions: d3.ScaleOrdinal<string, sortFuncType>;
 
+    private readonly sortFunctions: d3.ScaleOrdinal<string, sortFuncType>;
     private readonly parentSvg: Selection<any, any, any, any>;
     private readonly table: Selection<any, MigrationNode, any, MigrationNode>;
     private readonly header: Selection<any, any, any, any>;
@@ -27,7 +26,6 @@ export class Table implements IView {
     private readonly flowScale: ScaleLinear<number, number>;
     private readonly migrationScale: ScaleLinear<number, number>;
     private readonly growthScale: ScaleLinear<number, number>;
-    // TODO May just overlay these with total being the red/blue on the axis and the overlay being pruple
     private readonly headerLabels = ['Region', 'GDP per Capita', 'Total Flow', 'Pop. Flow', 'Pop. Growth', 'Population'];
 
     public curYear: number;
@@ -40,7 +38,8 @@ export class Table implements IView {
     private readonly GROWTH_RECT_WIDTH = 75;
     private readonly MIGRATION_RECT_WIDTH = 75;
     private readonly POP_RECT_WIDTH = 150;
-    private readonly column_widths = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65]
+    private readonly COLUMN_WIDTHS = [150, this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30,
+                                        this.FLOW_RECT_WIDTH + 30, this.FLOW_RECT_WIDTH + 30, 65];
 
     /**
      *
@@ -118,7 +117,7 @@ export class Table implements IView {
      * Class to refresh the data table for sorting, brush, or selections
      */
     loadTable(year) {
-        const data = this.currentData[year];
+        const data = JSON.parse(JSON.stringify(this.currentData[year]));
         //@ts-ignore
         this.tBody.selectAll('tr').data(data, (d) => {
             const e: MigrationNode = <MigrationNode>d;
@@ -170,12 +169,14 @@ export class Table implements IView {
                 this.popTotal(rows.append('td').classed('popTotal', true).append('text'), year);
 
                 const that = this;
-                const update_width = function(d,i){d3.select(this as any).attr('width', that.column_widths[i])};
+                const update_width = function(d,i){d3.select(this as any).attr('width', that.COLUMN_WIDTHS[i])};
                 this.table.selectAll('tr').selectAll('td').each(update_width).select('svg').each(update_width);
                 this.table.selectAll('tr').selectAll('th').each(update_width).select('svg').each(update_width);
 
             },
             update => {
+                const sortFunction = (a,b) => this.sortOrder * this.sortFunctions(this.lastSorted)(a,b,this.curYear);
+                this.tBody.selectAll('tr').sort(sortFunction);
                 update = update.transition();
                 
                 this.net(update.selectAll('rect').filter('.net'), year);
@@ -355,23 +356,27 @@ export class Table implements IView {
         //@ts-ignore
         el.append('g').attr("transform", `translate(${x}, 48)`).call(axis).selectAll('text').style("text-anchor", "end")
             .attr("dx", "-.5em")
-            // .attr("dy", ".01em")
             .attr("transform", `translate(${-x + 8}, 0) rotate(90)`)
     }
 
+    /**
+     * Listener attached to the column headers
+     * @param l integer value indicating which column header was clicked
+     */
     labelListener(l: string) {
-        console.log(l)
         if(this.lastSorted !== l)
         {
             this.sortOrder = 1;
         }
-        const sortFunction = (a,b) => this.sortOrder * this.sortFunctions(l)(a,b,this.curYear);
-        this.currentData[this.curYear].sort(sortFunction);
-        this.loadTable(this.curYear);
         this.lastSorted = l;
-        this.sortOrder *= -1
+        this.sortOrder *= -1;
+        this.loadTable(this.curYear);
     }
 
+    /**
+     * Listener that changes the year and reloads the table
+     * @param year
+     */
     changeYear(year: number) {
         this.curYear = year;
         this.loadTable(year);

@@ -311,7 +311,12 @@
          */
         Table.prototype.loadTable = function (year) {
             var _this = this;
-            var data = this.currentData[year];
+            var data = JSON.parse(JSON.stringify(this.currentData[year]));
+            // if (sortFunction) {
+            //     // data.sort(sortFunction);
+            //     // const sortFunction = (a,b) => this.sortOrder * this.sortFunctions(this.lastSorted)(a,b,this.curYear);
+            //     // this.tBody.selectAll('tr').sort(sortFunction);
+            // }
             //@ts-ignore
             this.tBody.selectAll('tr').data(data, function (d) {
                 var e = d;
@@ -356,6 +361,8 @@
                 _this.table.selectAll('tr').selectAll('td').each(update_width).select('svg').each(update_width);
                 _this.table.selectAll('tr').selectAll('th').each(update_width).select('svg').each(update_width);
             }, function (update) {
+                var sortFunction = function (a, b) { return _this.sortOrder * _this.sortFunctions(_this.lastSorted)(a, b, _this.curYear); };
+                _this.tBody.selectAll('tr').sort(sortFunction);
                 update = update.transition();
                 _this.net(update.selectAll('rect').filter('.net'), year);
                 _this.in(update.selectAll('rect').filter('.in'), year);
@@ -537,16 +544,13 @@
                 .attr("transform", "translate(" + (-x + 8) + ", 0) rotate(90)");
         };
         Table.prototype.labelListener = function (l) {
-            var _this = this;
             console.log(l);
             if (this.lastSorted !== l) {
                 this.sortOrder = 1;
             }
-            var sortFunction = function (a, b) { return _this.sortOrder * _this.sortFunctions(l)(a, b, _this.curYear); };
-            this.currentData[this.curYear].sort(sortFunction);
-            this.loadTable(this.curYear);
             this.lastSorted = l;
             this.sortOrder *= -1;
+            this.loadTable(this.curYear);
         };
         Table.prototype.changeYear = function (year) {
             this.curYear = year;
@@ -1312,11 +1316,10 @@
     }());
 
     var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
             function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
             function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
             step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
     };
@@ -1347,6 +1350,7 @@
             if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
         }
     };
+    var _this = undefined;
     String.prototype.clean = function () {
         return this.replace(/\s|%/g, "_");
     };
@@ -1418,7 +1422,7 @@
         d3.select('.activeYear').text(curYear);
     };
     var clickNum = 0;
-    play.on('click', function () { return __awaiter(void 0, void 0, void 0, function () {
+    play.on('click', function () { return __awaiter(_this, void 0, void 0, function () {
         var current, _a, _b, _i, year, t;
         return __generator(this, function (_c) {
             switch (_c.label) {
