@@ -139,6 +139,8 @@ export class HeatMap implements IView {
     stateFill(d: Feature, stateSelection: RegionEnum) {
         const name = d.properties.name;
         const nodeId = RegionEnum[name];
+        let curYear;
+        let lastYear;
         let flowData: number;
         if (stateSelection === null) {
             switch (this.state) {
@@ -149,13 +151,13 @@ export class HeatMap implements IView {
                     flowData = this.currentData[this.curYear][nodeId].totalCame;
                     break;
                 case ViewState.growth:
-                    const curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
-                    const lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
+                    curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
+                    lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
                     flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                     break;
                 case ViewState.flow:
-                    const curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
-                    const lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
+                    curYear = <MigrationNode>this.currentData[this.curYear][nodeId];
+                    lastYear = <MigrationNode>this.currentData[this.curYear - 1][nodeId];
                     flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                     break;
                 case ViewState.gdp:
