@@ -752,6 +752,12 @@
             this.dataSelection.exit(enter).remove();
         };
         HeatMap.prototype.focusNode = function (feature) {
+            if (this.state !== ViewState.net &&
+                this.state !== ViewState.in &&
+                this.state !== ViewState.out) {
+                this.currentRegion = null;
+                return;
+            }
             var region = RegionEnum[feature.properties.name];
             //@ts-ignore
             if (region === this.currentRegion) {

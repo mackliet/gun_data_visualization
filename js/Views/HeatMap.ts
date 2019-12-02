@@ -126,6 +126,12 @@ export class HeatMap implements IView {
     }
 
     focusNode(feature: Feature) {
+        if (this.state !== ViewState.net &&
+            this.state as ViewState !== ViewState.in &&
+            this.state as ViewState !== ViewState.out ){
+            this.currentRegion = null;
+            return
+        }
         let region = RegionEnum[feature.properties.name];
         //@ts-ignore
         if (region === this.currentRegion) {
