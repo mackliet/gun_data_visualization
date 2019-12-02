@@ -117,6 +117,6 @@ play.on('click', async () => {
 });
 
 // Bind migration statistic to event listeners on the migration statistic dropdown
-d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out, ViewState.growth, ViewState.gdp, ViewState.flow]).on('click', (d) => {
+d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out, ViewState.growth, ViewState.gdp, ViewState.flow, ViewState.pop]).on('click', (d) => {
     geo.toggleMigrationStatistic(d);
 });

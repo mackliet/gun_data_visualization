@@ -99,6 +99,8 @@ export class Table implements IView {
                         geo.toggleGeoState(ViewState.flow);
                     } else if (h == 'GDP per Capita'){
                         geo.toggleGeoState(ViewState.gdp);
+                    } else if (h == 'Population'){
+                        geo.toggleGeoState(ViewState.pop);
                     }
                 });
             const axis = this.axisHeader.append('th').classed(`Axis${index}`, true)

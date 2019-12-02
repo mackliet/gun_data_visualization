@@ -7,7 +7,8 @@ export enum ViewState {
     in = 'in',
     growth = 'growth',
     flow = 'flow',
-    gdp = 'gdp'
+    gdp = 'gdp',
+    pop = 'pop'
 }
 
 function getTooltipPadding()

@@ -228,6 +228,7 @@
         ViewState["growth"] = "growth";
         ViewState["flow"] = "flow";
         ViewState["gdp"] = "gdp";
+        ViewState["pop"] = "pop";
     })(ViewState || (ViewState = {}));
     function getTooltipPadding() {
         return 5;
@@ -375,6 +376,9 @@
                     }
                     else if (h == 'GDP per Capita') {
                         geo.toggleGeoState(ViewState.gdp);
+                    }
+                    else if (h == 'Population') {
+                        geo.toggleGeoState(ViewState.pop);
                     }
                 });
                 var axis = this_1.axisHeader.append('th').classed("Axis" + index, true);
@@ -782,8 +786,10 @@
                         flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                         break;
                     case ViewState.gdp:
-                        var d_1 = this.currentData[this.curYear][nodeId];
-                        flowData = d_1.GDPPerCapita;
+                        flowData = this.currentData[this.curYear][nodeId].GDPPerCapita;
+                        break;
+                    case ViewState.pop:
+                        flowData = this.currentData[this.curYear][nodeId].totalPopulation;
                         break;
                     default:
                         flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
@@ -828,6 +834,7 @@
                     return d3.interpolateReds;
                 case ViewState.gdp:
                 case ViewState.in:
+                case ViewState.pop:
                     return d3.interpolateBlues;
                 default:
                     return d3.interpolateRdBu;
@@ -872,6 +879,11 @@
                     // District of Columbia is a bit of an outlier
                     this.colorScale = d3.scaleLinear().domain([-0.08, 0.04]).range([0, 1]);
                     this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.08, 0.04]);
+                    break;
+                case ViewState.pop:
+                    // District of Columbia is a bit of an outlier
+                    this.colorScale = d3.scaleLinear().domain([5e5, 40e6]).range([0, 1]);
+                    this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([5e5, 40e6]);
                     break;
                 default:
                     if (this.currentRegion != null) {
@@ -1513,7 +1525,7 @@
         });
     }); });
     // Bind migration statistic to event listeners on the migration statistic dropdown
-    d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out, ViewState.growth, ViewState.gdp, ViewState.flow]).on('click', function (d) {
+    d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out, ViewState.growth, ViewState.gdp, ViewState.flow, ViewState.pop]).on('click', function (d) {
         geo.toggleMigrationStatistic(d);
     });
 

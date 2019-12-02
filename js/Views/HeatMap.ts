@@ -161,8 +161,10 @@ export class HeatMap implements IView {
                     flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                     break;
                 case ViewState.gdp:
-                    const d = <MigrationNode>this.currentData[this.curYear][nodeId];
-                    flowData = d.GDPPerCapita;
+                    flowData = (<MigrationNode>this.currentData[this.curYear][nodeId]).GDPPerCapita;
+                    break;
+                case ViewState.pop:
+                    flowData = (<MigrationNode>this.currentData[this.curYear][nodeId]).totalPopulation;
                     break;
                 default:
                     flowData = this.currentData[this.curYear][nodeId].netImmigrationFlow;
@@ -209,6 +211,7 @@ export class HeatMap implements IView {
                 return d3.interpolateReds;
             case ViewState.gdp:
             case ViewState.in:
+            case ViewState.pop:
                 return d3.interpolateBlues;
             default:
                 return d3.interpolateRdBu
@@ -252,6 +255,11 @@ export class HeatMap implements IView {
                 // District of Columbia is a bit of an outlier
                 this.colorScale = d3.scaleLinear().domain([-0.08, 0.04]).range([0,1]);
                 this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([-0.08, 0.04]);
+                break;
+            case ViewState.pop:
+                // District of Columbia is a bit of an outlier
+                this.colorScale = d3.scaleLinear().domain([5e5, 40e6]).range([0,1]);
+                this.legendScale = d3.scaleSequential(this.getInterpolate()).domain([5e5, 40e6]);
                 break;
             default:
                 if (this.currentRegion != null) {
