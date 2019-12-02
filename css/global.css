@@ -100,3 +100,12 @@ tspan.custom_tooltip
     background: #4CAF50;
     cursor: pointer;
 }
+
+a {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+p {
+    margin-bottom: 0;
+}
