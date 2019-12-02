@@ -906,11 +906,25 @@
             var stateSelection = this.currentRegion;
             if (stateSelection === null) {
                 var tooltipStatFunc = function (selectedStat) {
+                    var d = _this.currentData[_this.curYear][nodeId];
                     switch (selectedStat) {
                         case ViewState.out:
-                            return "Total left: " + _this.currentData[_this.curYear][nodeId].totalLeft;
+                            return "Total left: " + d.totalLeft;
                         case ViewState.in:
-                            return "Total came: " + _this.currentData[_this.curYear][nodeId].totalCame;
+                            return "Total came: " + d.totalCame;
+                        case ViewState.pop:
+                            return "Total population: " + d.totalPopulation;
+                        case ViewState.flow:
+                            var flow = (d.netImmigrationFlow / d.totalPopulation * 100).toFixed(2);
+                            return "% pop migrated: " + flow + "%";
+                        case ViewState.gdp:
+                            return "GDPPC: " + d.GDPPerCapita;
+                        case ViewState.growth:
+                            if (_this.curYear === 2015)
+                                return 'Growth: N/A';
+                            var pop = d.totalPopulation / _this.currentData[_this.curYear - 1][nodeId].totalPopulation;
+                            var g = ((pop - 1) * 100).toFixed(2);
+                            return "Growth: " + g + "%";
                         case ViewState.net:
                     }
                     return "Net immigration: " + _this.currentData[_this.curYear][nodeId].netImmigrationFlow;

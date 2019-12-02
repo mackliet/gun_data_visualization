@@ -291,12 +291,25 @@ export class HeatMap implements IView {
             const tooltipStatFunc = 
             (selectedStat) =>
             {
+                const d = <MigrationNode>this.currentData[this.curYear][nodeId];
                 switch(selectedStat)
                 {
                     case ViewState.out:
-                        return `Total left: ${this.currentData[this.curYear][nodeId].totalLeft}`;
+                        return `Total left: ${d.totalLeft}`;
                     case ViewState.in:
-                        return `Total came: ${this.currentData[this.curYear][nodeId].totalCame}`;
+                        return `Total came: ${d.totalCame}`;
+                    case ViewState.pop:
+                        return `Total population: ${d.totalPopulation}`;
+                    case ViewState.flow:
+                        const flow = (d.netImmigrationFlow / d.totalPopulation * 100).toFixed(2);
+                        return `% pop migrated: ${flow}%`;
+                    case ViewState.gdp:
+                        return `GDPPC: ${d.GDPPerCapita}`;
+                    case ViewState.growth:
+                        if (this.curYear === 2015) return 'Growth: N/A';
+                        const pop = d.totalPopulation / this.currentData[this.curYear - 1][nodeId].totalPopulation;
+                        const g = (( pop - 1)* 100).toFixed(2);
+                        return `Growth: ${g}%`;
                     case ViewState.net:
                     default:
                         break;
