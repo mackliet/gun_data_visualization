@@ -760,6 +760,8 @@
         HeatMap.prototype.stateFill = function (d, stateSelection) {
             var name = d.properties.name;
             var nodeId = RegionEnum[name];
+            var curYear;
+            var lastYear;
             var flowData;
             if (stateSelection === null) {
                 switch (this.state) {
@@ -770,13 +772,13 @@
                         flowData = this.currentData[this.curYear][nodeId].totalCame;
                         break;
                     case ViewState.growth:
-                        var curYear = this.currentData[this.curYear][nodeId];
-                        var lastYear = this.currentData[this.curYear - 1][nodeId];
+                        curYear = this.currentData[this.curYear][nodeId];
+                        lastYear = this.currentData[this.curYear - 1][nodeId];
                         flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                         break;
                     case ViewState.flow:
-                        var curYear = this.currentData[this.curYear][nodeId];
-                        var lastYear = this.currentData[this.curYear - 1][nodeId];
+                        curYear = this.currentData[this.curYear][nodeId];
+                        lastYear = this.currentData[this.curYear - 1][nodeId];
                         flowData = curYear.totalPopulation / lastYear.totalPopulation - 1;
                         break;
                     case ViewState.gdp:
@@ -1511,7 +1513,7 @@
         });
     }); });
     // Bind migration statistic to event listeners on the migration statistic dropdown
-    d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out]).on('click', function (d) {
+    d3.selectAll('.dropdown-item').data([ViewState.net, ViewState.in, ViewState.out, ViewState.growth, ViewState.gdp, ViewState.flow]).on('click', function (d) {
         geo.toggleMigrationStatistic(d);
     });
 
