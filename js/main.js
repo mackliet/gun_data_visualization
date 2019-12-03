@@ -127,7 +127,8 @@
                         totalLeft: d.total_left,
                         toEdges: new Map(),
                         fromEdges: new Map(),
-                        GDPPerCapita: d.GDP_per_capita
+                        GDPPerCapita: d.GDP_per_capita,
+                        region: d.geographic_area
                     };
                     /**
                      * Check totals get max values
@@ -424,9 +425,14 @@
                 var e = d;
                 return e.nodeId;
             }).join(function (enter) {
-                var rows = enter.append('tr');
+                var rows = enter.append('tr').attr('id', function (d) {
+                    return RegionEnum[d.nodeId].clean();
+                }).attr('class', function (d) {
+                    return d.region.clean();
+                });
                 rows.append('td').style('text-align', 'left').classed('region_name', true)
                     .append('text').text(function (d) {
+                    console.log(d.region);
                     return RegionEnum[d.nodeId];
                 });
                 rows.append('td').classed('gdp', true).append('text').text(function (d) {
@@ -1048,9 +1054,10 @@
     }
 
     var Scatterplot = /** @class */ (function () {
-        function Scatterplot(state_data, container, svg_dims, start_year) {
+        function Scatterplot(state_data, container, svg_dims, table, start_year) {
             if (start_year === void 0) { start_year = 2017; }
             var plot_div = container.append('div').classed('plot_container', true);
+            this.table = table;
             this.curYear = start_year;
             this.year_to_indicators = state_data;
             this.current_year_data = this.year_to_indicators[this.curYear];
@@ -1182,6 +1189,7 @@
                 .select('input')
                 .on("change", function () {
                 var checkbox = this;
+                that.table.tBody.selectAll('tr').classed('hide-row', !checkbox.checked);
                 that.circle_selection.classed('unselected', !checkbox.checked);
                 rows.selectAll('input')
                     .each(function () { this.checked = checkbox.checked; });
@@ -1194,6 +1202,7 @@
                 var checkbox = this;
                 that.circle_selection.filter(function (state_data) { return "" + state_data.geographic_area == d.col2; })
                     .classed('unselected', !checkbox.checked);
+                that.table.tBody.selectAll('tr').filter("." + d.col2.clean()).classed('hide-row', !checkbox.checked);
                 region_column.filter(geo_area_filter)
                     .select('input')
                     .each(function () { this.checked = checkbox.checked; });
@@ -1206,6 +1215,7 @@
                 .select('input')
                 .on("change", function (d) {
                 var checkbox = this;
+                that.table.tBody.selectAll('tr').filter("#" + d.col3.clean()).classed('hide-row', checkbox.checked);
                 that.update_checked_states(d.col3, checkbox.checked);
                 var region_same_geo_area = function (region_d) { return that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3]; };
                 var geo_area_for_region = function (geo_col) { return geo_col.col2 == that.state_to_geo_area[d.col3]; };
@@ -1468,7 +1478,7 @@
         migrationPatterns = new MigrationPatterns(data);
         geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
         table = new Table(migrationPatterns, tableSelection, tableDims, geo);
-        scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+        scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims, table);
         d3.select('.activeYear').text('2017');
         var clearHighlight = function () {
             scatter.clearHighlightedState();
