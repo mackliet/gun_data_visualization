@@ -246,7 +246,7 @@ export class Scatterplot implements IView
         function(d)
         {
             const checkbox = this as HTMLInputElement;
-            that.table.tBody.selectAll('tr').filter(`#${d.col3.clean()}`).classed('hide-row', checkbox.checked);
+            that.table.tBody.selectAll('tr').filter(`#${d.col3.clean()}`).classed('hide-row', !checkbox.checked);
             that.update_checked_states(d.col3, checkbox.checked);
 
             const region_same_geo_area = region_d => that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3];

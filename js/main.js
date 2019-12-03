@@ -1215,7 +1215,7 @@
                 .select('input')
                 .on("change", function (d) {
                 var checkbox = this;
-                that.table.tBody.selectAll('tr').filter("#" + d.col3.clean()).classed('hide-row', checkbox.checked);
+                that.table.tBody.selectAll('tr').filter("#" + d.col3.clean()).classed('hide-row', !checkbox.checked);
                 that.update_checked_states(d.col3, checkbox.checked);
                 var region_same_geo_area = function (region_d) { return that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3]; };
                 var geo_area_for_region = function (geo_col) { return geo_col.col2 == that.state_to_geo_area[d.col3]; };
