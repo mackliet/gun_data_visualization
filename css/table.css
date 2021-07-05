@@ -48,3 +48,7 @@ th.table_header
     float: left;
     color: gray;
 }
+
+.hide-row {
+    display:none;
+}

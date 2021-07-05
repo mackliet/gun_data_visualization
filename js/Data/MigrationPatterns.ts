@@ -1,5 +1,5 @@
 import {Year} from "./ImportData";
-import {RegionEnum} from "./DataUtils"
+import {GeographicAreaEnum, RegionEnum} from "./DataUtils"
 /**
  * An edge that represents migration from one state to another
  */
@@ -20,6 +20,7 @@ export interface MigrationNode {
     totalCame: number;
     totalLeft: number;
     GDPPerCapita: number;
+    region: GeographicAreaEnum;
 }
 
 export interface StateRange {
@@ -79,7 +80,8 @@ export class MigrationPatterns {
                     totalLeft: d.total_left,
                     toEdges: new Map<RegionEnum, MigrationEdge>(),
                     fromEdges: new Map<RegionEnum, MigrationEdge>(),
-                    GDPPerCapita: d.GDP_per_capita
+                    GDPPerCapita: d.GDP_per_capita,
+                    region: d.geographic_area
                 };
 
                 /**

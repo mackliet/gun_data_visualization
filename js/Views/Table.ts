@@ -1,5 +1,5 @@
 import {MigrationData, MigrationNode, MigrationPatterns} from "../Data/MigrationPatterns";
-import {RegionEnum} from "../Data/DataUtils"
+import {GeographicAreaEnum, RegionEnum} from "../Data/DataUtils"
 import {ScaleLinear} from 'd3';
 import {Selection} from 'd3-selection';
 import {Dimensions} from "../Utils/svg-utils";
@@ -24,7 +24,7 @@ export class Table implements IView {
     private readonly axisHeader: Selection<any, any, any, any>;
     private readonly titleHeader: Selection<any, any, any, any>;
     private readonly yearContainer: Selection<any, any, any, any>;
-    private readonly tBody: Selection<any, MigrationNode, any, any>;
+    public readonly tBody: Selection<any, MigrationNode, any, any>;
     private readonly flowScale: ScaleLinear<number, number>;
     private readonly migrationScale: ScaleLinear<number, number>;
     private readonly growthScale: ScaleLinear<number, number>;
@@ -68,7 +68,7 @@ export class Table implements IView {
         this.lastSorted = null;
         this.sortOrder = 1;
         const sortFunctions: Array<sortFuncType>
-                            = [(a,b, _) => a.nodeId - b.nodeId, 
+                            = [(a,b, _) => a.nodeId - b.nodeId,
                               (a,b, _) => a.GDPPerCapita - b.GDPPerCapita,
                               (a,b, _) => a.netImmigrationFlow - b.netImmigrationFlow,
                               (a,b, _) => a.netImmigrationFlow/a.totalPopulation - b.netImmigrationFlow/b.totalPopulation,
@@ -142,10 +142,15 @@ export class Table implements IView {
             return e.nodeId
         }).join(
             enter => {
-                const rows = enter.append('tr');
+                const rows = enter.append('tr').attr('id', (d) => {
+                    return RegionEnum[d.nodeId].clean();
+                }).attr('class', (d) => {
+                    return d.region.clean();
+                });
 
                 rows.append('td').style('text-align', 'left').classed('region_name', true)
                     .append('text').text((d) => {
+                        console.log(d.region);
                     return RegionEnum[d.nodeId];
                 });
 

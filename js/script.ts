@@ -48,7 +48,7 @@ d3.json('data/migration_and_economic_data.json').then((data) => {
     migrationPatterns = new MigrationPatterns(data);
     geo = new HeatMap(migrationPatterns, geoSelection, geoDims);
     table = new Table(migrationPatterns, tableSelection, tableDims, geo);
-    scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims);
+    scatter = new Scatterplot(build_year_to_indicators_map(data), scatterSelection, scatterDims, table);
     d3.select('.activeYear').text('2017');
 
     const clearHighlight = () =>

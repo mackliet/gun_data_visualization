@@ -49,7 +49,7 @@ export function build_year_to_indicators_map(json_data: Array<any>)
                 personal_income_per_capita: d.personal_income_per_capita,
                 personal_disposable_income_per_capita: d.personal_disposable_income_per_capita,
                 personal_taxes_per_capita: d.personal_taxes_per_capita,  
-            }
+            };
             year_to_indicators[curYear].push(state_indicators);
         }
     }

@@ -13,6 +13,7 @@ interface RawData {
     total_came: number;
     total_left: number;
     GDP_per_capita: number;
+    geographic_area;
 }
 
 export interface Year {

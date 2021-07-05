@@ -10,6 +10,7 @@ import { maxHeaderSize } from "http";
 import { types } from "@babel/core";
 import { thisTypeAnnotation } from "@babel/types";
 import { endianness } from "os";
+import {Table} from "./Table";
 
 
 export class Scatterplot implements IView 
@@ -29,7 +30,8 @@ export class Scatterplot implements IView
     readonly default_transition_time: number;
     readonly year_change_transition_time: number;
     readonly color_map: d3.ScaleOrdinal<string, string>;
-    readonly state_to_geo_area: {[key:string]:string}
+    readonly state_to_geo_area: {[key:string]:string};
+    readonly table: Table;
     region_column: Selection<any, any, any, any>;
     circle_selection: Selection<any, any, any, any>;
     active_x_indicator: string;
@@ -43,10 +45,10 @@ export class Scatterplot implements IView
     clearCallback: () => void;
 
     constructor(state_data: Year_to_indicators_map, container: Selection<any, any, any, any>,
-                svg_dims: Dimensions, start_year: number = 2017) 
+                svg_dims: Dimensions, table: Table, start_year: number = 2017)
     {
         const plot_div = container.append('div').classed('plot_container', true);
-
+        this.table = table;
         this.curYear = start_year;
         this.year_to_indicators = state_data
         this.current_year_data = this.year_to_indicators[this.curYear];
@@ -68,7 +70,7 @@ export class Scatterplot implements IView
         this.color_map = d3.scaleOrdinal(d3.schemeDark2).domain(getGeographicAreaStrings());
         this.highlightedState = null;
 
-        this.state_to_geo_area = {}
+        this.state_to_geo_area = {};
         for(let state of this.current_year_data)
         {
             this.state_to_geo_area[`${state.state}`] = `${state.geographic_area}`;
@@ -212,7 +214,8 @@ export class Scatterplot implements IView
         function()
         {
             const checkbox = this as HTMLInputElement;
-            that.circle_selection.classed('unselected', !checkbox.checked)
+            that.table.tBody.selectAll('tr').classed('hide-row', !checkbox.checked);
+            that.circle_selection.classed('unselected', !checkbox.checked);
             rows.selectAll('input')
             .each(function(){(this as HTMLInputElement).checked = checkbox.checked})
         });
@@ -225,11 +228,11 @@ export class Scatterplot implements IView
             const geo_area_filter = region_d => d.col2 == that.state_to_geo_area[region_d.col3];
             const checkbox = this as HTMLInputElement;
             that.circle_selection.filter(state_data => `${state_data.geographic_area}` == d.col2)
-            .classed('unselected', !checkbox.checked)
-            
+            .classed('unselected', !checkbox.checked);
+            that.table.tBody.selectAll('tr').filter(`.${d.col2.clean()}`).classed('hide-row', !checkbox.checked);
             region_column.filter(geo_area_filter)
             .select('input')
-            .each(function(){(this as HTMLInputElement).checked = checkbox.checked})
+            .each(function(){(this as HTMLInputElement).checked = checkbox.checked});
 
             const num_region= region_column.select('input').size();
             const num_checked_region = region_column.select('input').filter(function(){return (this as HTMLInputElement).checked}).size();
@@ -243,6 +246,7 @@ export class Scatterplot implements IView
         function(d)
         {
             const checkbox = this as HTMLInputElement;
+            that.table.tBody.selectAll('tr').filter(`#${d.col3.clean()}`).classed('hide-row', !checkbox.checked);
             that.update_checked_states(d.col3, checkbox.checked);
 
             const region_same_geo_area = region_d => that.state_to_geo_area[d.col3] == that.state_to_geo_area[region_d.col3];
